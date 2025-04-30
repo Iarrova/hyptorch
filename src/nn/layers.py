@@ -8,7 +8,7 @@ from typing import Optional, Union
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-from pmath.poincare import distance, exponential_map_at_zero, mobius_addition, mobius_matrix_vector_multiplication, project
+from hyptorch.pmath.poincare import distance, exponential_map_at_zero, mobius_addition, mobius_matrix_vector_multiplication, project
 
 
 class HypLinear(nn.Module):

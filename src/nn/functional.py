@@ -4,7 +4,7 @@ Functional operations for hyperbolic neural networks.
 
 import torch
 
-from pmath.poincare import hyperbolic_softmax
+from hyptorch.pmath.poincare import hyperbolic_softmax
 
 
 def hyperbolic_softmax_loss(

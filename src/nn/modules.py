@@ -8,8 +8,8 @@ from typing import Optional, Union
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-from pmath.autograd import RiemannianGradient
-from pmath.poincare import (
+from hyptorch.pmath.autograd import RiemannianGradient
+from hyptorch.pmath.poincare import (
     exponential_map,
     exponential_map_at_zero,
     hyperbolic_softmax,

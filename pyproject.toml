@@ -1,15 +1,31 @@
 [project]
 name = "hyptorch"
-version = "0.1.0"
+version = "0.1.1"
 description = "Suite of hyperbolic neural networks in PyTorch"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = [
-    "scipy>=1.15.2",
-    "torch>=2.7.0",
-    "torchvision>=0.22.0",
+license = { text = "MIT" }
+keywords = [
+    "pytorch",
+    "deep-learning",
+    "hyperbolic",
+    "neural-networks",
+    "machine-learning",
 ]
+dependencies = ["scipy>=1.15.2", "torch>=2.7.0", "torchvision>=0.22.0"]
 
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.ruff]
 line-length = 110
+
+[dependency-groups]
+dev = ["pyright>=1.1.400", "pytest>=8.3.5"]

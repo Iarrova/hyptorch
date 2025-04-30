@@ -8,8 +8,8 @@ import numpy as np
 import torch
 
 from scipy.special import gamma
-from pmath.autograd import artanh
-from pmath.poincare import mobius_addition_batch
+from hyptorch.pmath.autograd import artanh
+from hyptorch.pmath.poincare import mobius_addition_batch
 
 
 def distance_matrix(x: torch.Tensor, y: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:

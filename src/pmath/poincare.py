@@ -8,9 +8,9 @@ import torch
 from pmath.autograd import arsinh, artanh
 from utils.numeric import safe_tanh
 
-from ..config import EPS
-from ..utils.numeric import safe_tanh
-from .mappings import klein_to_poincare, poincare_to_klein
+from hyptorch.config import EPS
+from hyptorch.utils.numeric import safe_tanh
+from hyptorch.pmath.mappings import klein_to_poincare, poincare_to_klein
 
 
 def project(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:

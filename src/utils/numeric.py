@@ -4,7 +4,7 @@ Numerical stability utilities for hyperbolic operations.
 
 import torch
 
-from ..config import TANH_CLAMP
+from hyptorch.config import TANH_CLAMP
 
 
 def safe_tanh(x: torch.Tensor, clamp: float = TANH_CLAMP) -> torch.Tensor:

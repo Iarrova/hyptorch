@@ -5,8 +5,8 @@ Poincare ball manifold implementation.
 from typing import Optional, Union
 
 import torch
-from manifolds.base import Manifold
-from pmath.poincare import distance, exponential_map, compute_conformal_factor, logarithmic_map, mobius_addition, project
+from hyptorch.manifolds.base import Manifold
+from hyptorch.pmath.poincare import distance, exponential_map, compute_conformal_factor, logarithmic_map, mobius_addition, project
 
 
 class PoincareManifold(Manifold):

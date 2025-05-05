@@ -8,6 +8,7 @@ from typing import Optional, Union
 import torch
 import torch.nn as nn
 import torch.nn.init as init
+
 from hyptorch.pmath.autograd import RiemannianGradient
 from hyptorch.pmath.poincare import (
     exponential_map,

@@ -5,11 +5,11 @@ Core operations in the Poincaré ball model of hyperbolic space.
 from typing import Union
 
 import torch
-from hyptorch.pmath.autograd import arsinh, artanh
-from hyptorch.utils.numeric import safe_tanh
+
 from hyptorch.config import EPS
-from hyptorch.utils.numeric import safe_tanh
+from hyptorch.pmath.autograd import arsinh, artanh
 from hyptorch.pmath.mappings import klein_to_poincare, poincare_to_klein
+from hyptorch.utils.numeric import safe_tanh
 
 
 def project(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:

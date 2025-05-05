@@ -6,8 +6,8 @@ from typing import Union
 
 import numpy as np
 import torch
-
 from scipy.special import gamma
+
 from hyptorch.pmath.autograd import artanh
 from hyptorch.pmath.poincare import mobius_addition_batch
 

@@ -31,7 +31,7 @@ where = ["src"]
 [tool.ruff]
 line-length = 110
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "pyright>=1.1.400",
     "pytest>=8.3.5",

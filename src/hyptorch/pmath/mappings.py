@@ -5,7 +5,7 @@ import torch
 from hyptorch.config import EPS
 from hyptorch.pmath.autograd import artanh
 from hyptorch.pmath.operations import mobius_addition
-from hyptorch.pmath.scales import compute_conformal_factor
+from hyptorch.pmath.scalings import compute_conformal_factor
 from hyptorch.utils.numeric import safe_tanh
 
 

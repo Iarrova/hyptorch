@@ -35,7 +35,7 @@ class Arsinh(torch.autograd.Function):
 
 class RiemannianGradient(torch.autograd.Function):
     # TODO: Add curvature as a parameter
-    curvature = 1
+    curvature = 1.0
 
     @staticmethod
     def forward(ctx, x):

@@ -5,8 +5,12 @@ Poincare ball manifold implementation.
 from typing import Optional, Union
 
 import torch
+
 from hyptorch.manifolds.base import Manifold
-from hyptorch.pmath.poincare import distance, exponential_map, compute_conformal_factor, logarithmic_map, mobius_addition, project
+from hyptorch.pmath.distances import distance
+from hyptorch.pmath.mappings import exponential_map, logarithmic_map, project
+from hyptorch.pmath.operations import mobius_addition
+from hyptorch.pmath.scalings import compute_conformal_factor
 
 
 class PoincareManifold(Manifold):
@@ -51,7 +55,7 @@ class PoincareManifold(Manifold):
         """
         if curvature is None:
             curvature = self.curvature
-        return distance(x, y, curvature=curvature, keepdim=keepdim)
+        return distance(x, y, curvature=curvature)
 
     def expmap(
         self,

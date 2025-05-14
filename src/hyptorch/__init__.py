@@ -7,7 +7,7 @@ specifically using the Poincaré ball model of hyperbolic geometry.
 
 from hyptorch.nn.layers import ConcatPoincareLayer, HyperbolicDistanceLayer, HypLinear
 from hyptorch.nn.modules import FromPoincare, HyperbolicMLR, ToPoincare
-from hyptorch.pmath.poincare import distance, mobius_addition, project
+from hyptorch.pmath.distances import distance
 
 __all__ = [
     "HypLinear",
@@ -16,7 +16,5 @@ __all__ = [
     "HyperbolicMLR",
     "ToPoincare",
     "FromPoincare",
-    "mobius_addition",
     "distance",
-    "project",
 ]

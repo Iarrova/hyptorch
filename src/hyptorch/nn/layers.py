@@ -9,13 +9,9 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 
-from hyptorch.pmath.poincare import (
-    distance,
-    exponential_map_at_zero,
-    mobius_addition,
-    mobius_matrix_vector_multiplication,
-    project,
-)
+from hyptorch.pmath.distances import distance
+from hyptorch.pmath.mappings import exponential_map_at_zero, project
+from hyptorch.pmath.operations import mobius_addition, mobius_matrix_vector_multiplication
 
 
 class HypLinear(nn.Module):
@@ -220,7 +216,7 @@ class HyperbolicDistanceLayer(nn.Module):
             curvature = self.curvature
 
         # Compute hyperbolic distance
-        return distance(x1, x2, curvature=curvature, keepdim=True)
+        return distance(x1, x2, curvature=curvature)
 
     def extra_repr(self) -> str:
         """

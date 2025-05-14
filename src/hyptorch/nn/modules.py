@@ -10,14 +10,14 @@ import torch.nn as nn
 import torch.nn.init as init
 
 from hyptorch.pmath.autograd import RiemannianGradient
-from hyptorch.pmath.poincare import (
+from hyptorch.pmath.mappings import (
     exponential_map,
     exponential_map_at_zero,
-    hyperbolic_softmax,
     logarithmic_map,
     logarithmic_map_at_zero,
     project,
 )
+from hyptorch.pmath.poincare import hyperbolic_softmax
 
 
 class HyperbolicMLR(nn.Module):

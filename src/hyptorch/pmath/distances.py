@@ -19,8 +19,10 @@ def distance(
     """
     Distance between two points on the Poincaré ball.
     The distance is computed using the formula:
+
     .. math::
         d_c(\\mathbf{x}, \\mathbf{y}) = \\frac{2}{\\sqrt{c}} * arctanh(\\sqrt{c} \\|\\mathbf{-x} \\oplus_{c} \\mathbf{y}\\|)
+
     where :math:`c` is the curvature of the ball, and :math:`\\oplus_{c}` is the Mobius addition operation.
 
 

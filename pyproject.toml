@@ -32,4 +32,12 @@ where = ["src"]
 line-length = 110
 
 [dependency-groups]
-dev = ["pyright>=1.1.400", "pytest>=8.3.5"]
+dev = [
+    "myst-parser>=4.0.1",
+    "nbsphinx>=0.9.7",
+    "pyright>=1.1.400",
+    "pytest>=8.3.5",
+    "sphinx>=8.1.3",
+    "sphinx-copybutton>=0.5.2",
+    "sphinx-rtd-theme>=3.0.2",
+]

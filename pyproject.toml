@@ -17,6 +17,7 @@ dependencies = ["scipy>=1.15.2", "torch>=2.7.0", "torchvision>=0.22.0"]
 [project.urls]
 "Homepage" = "https://github.com/Iarrova/hyptorch"
 "Source Code" = "https://github.com/Iarrova/hyptorch"
+"Documentation" = "https://hyptorch.readthedocs.io/en/latest/"
 
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -32,10 +33,7 @@ where = ["src"]
 line-length = 110
 
 [project.optional-dependencies]
-dev = [
-    "pyright>=1.1.400",
-    "pytest>=8.3.5",
-]
+dev = ["pyright>=1.1.400", "pytest>=8.3.5"]
 docs = [
     "myst-parser>=4.0.1",
     "nbsphinx>=0.9.7",

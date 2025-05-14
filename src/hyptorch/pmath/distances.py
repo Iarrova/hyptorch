@@ -41,9 +41,7 @@ def distance(
     c = torch.as_tensor(curvature).type_as(x)
     sqrt_c = c**0.5
 
-    dist_c = artanh(sqrt_c * norm(mobius_addition(-x, y, c)))
-
-    return dist_c * 2 / sqrt_c
+    return 2 / sqrt_c * artanh(sqrt_c * norm(mobius_addition(-x, y, c)))
 
 
 def distance_matrix(x: torch.Tensor, y: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:

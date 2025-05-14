@@ -4,7 +4,6 @@ import torch
 
 from hyptorch.config import EPS
 from hyptorch.pmath.autograd import artanh
-from hyptorch.pmath.operations import mobius_addition
 from hyptorch.pmath.scalings import compute_conformal_factor
 from hyptorch.utils.numeric import safe_tanh
 
@@ -80,6 +79,8 @@ def exponential_map(
     tensor
         End point gamma_{x,tangent_vector}(1).
     """
+    from hyptorch.pmath.operations import mobius_addition
+
     c = torch.as_tensor(curvature).type_as(x)
     sqrt_c = c**0.5
 
@@ -139,6 +140,8 @@ def logarithmic_map(x: torch.Tensor, y: torch.Tensor, curvature: Union[float, to
     tensor
         Tangent vector that transports x to y.
     """
+    from hyptorch.pmath.operations import mobius_addition
+
     c = torch.as_tensor(curvature).type_as(x)
 
     # Calculate -x ⊕_c y

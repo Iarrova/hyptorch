@@ -16,13 +16,4 @@ documentation for details.
    :caption: Contents:
 
    installation
-   quickstart
-   mathematical_background
    api/index
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

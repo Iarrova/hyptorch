@@ -7,30 +7,52 @@ from hyptorch.pmath.autograd import artanh
 from hyptorch.pmath.scalings import compute_conformal_factor
 from hyptorch.utils.numeric import safe_tanh
 
+from hyptorch.utils.numeric import norm
+
 
 def project(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:
     """
-    Safe projection on the manifold for numerical stability.
+    Project a point onto the Poincaré ball manifold to maintain numerical stability.
+
+    During optimization or computation in hyperbolic space, numerical errors can cause
+    points to drift slightly outside the valid manifold. This function safely projects such
+    points back inside the Poincaré ball, ensuring that all points lie within the allowable
+    radius defined by the curvature.
+
+    In the Poincaré ball model with curvature :math: `-c`, the manifold is the open ball of radius
+    :math: `\\frac{1}{\\sqrt{c}}`. Any point `\\mathbf{x} \\in \\mathbb{R}^n` with norm greater than this radius lies outside the
+    manifold. This function scales such points to lie just inside the boundary.
+
+    Projection is done using the formula:
+
+    .. math::
+        \\text{proj}(\\mathbf{x}) =
+        \\begin{cases}
+            \\frac{x}{\\|x\\|} \\cdot r_{\\text{max}} & \\text{if } \\|x\\| > r_{\\text{max}} \\
+            x & \\text{otherwise}
+        \\end{cases}
+        \\quad \\text{where} \\quad r_{\\text{max}} = \\frac{1 - \\epsilon}{\\sqrt{c}}
+
+    where :math: `\\epsilon` is a small constant to ensure the point lies strictly within the ball.
 
     Parameters
     ----------
-    x : tensor
+    x : torch.Tensor
         Point on the Poincare ball.
-    curvature : float or tensor
+    curvature : float or torch.Tensor
         Ball negative curvature.
 
     Returns
     -------
-    tensor
-        Projected vector on the manifold.
+    torch.Tensor
+        A projected point lying strictly within the Poincaré ball.
     """
     c = torch.as_tensor(curvature).type_as(x)
-    norm = torch.clamp_min(x.norm(dim=-1, keepdim=True, p=2), EPS)
-    # TODO: Used to be EPS=1e-3, just in case of numerical instability
-    maxnorm = (1 - EPS) / (c**0.5)
-    cond = norm > maxnorm
-    projected = x / norm * maxnorm
-    return torch.where(cond, projected, x)
+    # TODO: Check the impact of changing the value of 1e-3
+    r_max = (1 - 1e-3) / torch.sqrt(c)  # Maximum norm allowed by manifold
+    
+    x_norm = torch.clamp_min(norm(x), EPS)
+    return torch.where(x_norm > r_max, x / x_norm * r_max, x)
 
 
 def exponential_map_at_zero(

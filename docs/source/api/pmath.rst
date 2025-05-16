@@ -8,3 +8,11 @@ Distances
    :members:
    :undoc-members:
    :show-inheritance:
+
+Mappings
+------------
+
+.. automodule:: hyptorch.pmath.mappings
+   :members:
+   :undoc-members:
+   :show-inheritance:

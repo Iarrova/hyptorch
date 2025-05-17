@@ -1,14 +1,10 @@
-"""
-Numerical stability utilities for hyperbolic operations.
-"""
-
 import torch
 from torch.linalg import norm as linalg_norm
 
 from hyptorch.config import TANH_CLAMP
 
 
-def safe_tanh(x: torch.Tensor, clamp: float = TANH_CLAMP) -> torch.Tensor:
+def tanh(x: torch.Tensor, clamp: float = TANH_CLAMP) -> torch.Tensor:
     """
     Numerically stable implementation of tanh.
 

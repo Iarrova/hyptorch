@@ -24,16 +24,16 @@ def distance(
 
     Parameters
     ----------
-    x : tensor
-        Point on Poincaré ball.
-    y : tensor
-        Point on Poincaré ball.
-    curvature : float or tensor
+    x : torch.Tensor
+        Point on the Poincaré ball.
+    y : torch.Tensor
+        Point on the Poincaré ball.
+    curvature : float or torch.Tensor
         Ball negative curvature.
 
     Returns
     -------
-    tensor
+    torch.Tensor
         Geodesic distance between x and y.
     """
     c = torch.as_tensor(curvature).type_as(x)

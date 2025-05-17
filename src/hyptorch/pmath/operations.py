@@ -5,7 +5,7 @@ import torch
 from hyptorch.config import EPS
 from hyptorch.pmath.autograd import artanh
 from hyptorch.pmath.mappings import project
-from hyptorch.utils.numeric import safe_tanh
+from hyptorch.utils.numeric import tanh
 
 
 def mobius_addition(x: torch.Tensor, y: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:
@@ -104,7 +104,7 @@ def mobius_matrix_vector_multiplication(
     mx = x @ matrix.transpose(-1, -2)
     mx_norm = mx.norm(dim=-1, keepdim=True, p=2)
 
-    res_c = safe_tanh(mx_norm / x_norm * artanh(sqrt_c * x_norm)) * mx / (mx_norm * sqrt_c)
+    res_c = tanh(mx_norm / x_norm * artanh(sqrt_c * x_norm)) * mx / (mx_norm * sqrt_c)
 
     cond = (mx == 0).prod(-1, keepdim=True, dtype=torch.uint8)
     res_0 = torch.zeros(1, dtype=res_c.dtype, device=res_c.device)

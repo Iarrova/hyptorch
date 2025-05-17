@@ -19,13 +19,14 @@ def project(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Ten
     points back inside the Poincaré ball, ensuring that all points lie within the allowable
     radius defined by the curvature.
 
-    In the Poincaré ball model with curvature :math: `-c`, the manifold is the open ball of radius
-    :math: `\\frac{1}{\\sqrt{c}}`. Any point `\\mathbf{x} \\in \\mathbb{R}^n` with norm greater than this radius lies outside the
+    In the Poincaré ball model with curvature :math:`-c`, the manifold is the open ball of radius
+    :math:`\\frac{1}{\\sqrt{c}}`. Any point :math:`\\mathbf{x} \\in \\mathbb{R}^n` with norm greater than this radius lies outside the
     manifold. This function scales such points to lie just inside the boundary.
 
     Projection is done using the formula:
 
     .. math::
+    
         \\text{proj}(\\mathbf{x}) =
         \\begin{cases}
             \\frac{x}{\\|x\\|} \\cdot r_{\\text{max}} & \\text{if } \\|x\\| > r_{\\text{max}} \\
@@ -33,7 +34,7 @@ def project(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Ten
         \\end{cases}
         \\quad \\text{where} \\quad r_{\\text{max}} = \\frac{1 - \\epsilon}{\\sqrt{c}}
 
-    where :math: `\\epsilon` is a small constant to ensure the point lies strictly within the ball.
+    where :math:`\\epsilon` is a small constant to ensure the point lies strictly within the ball.
 
     Parameters
     ----------

@@ -5,9 +5,7 @@ import torch
 from hyptorch.config import EPS
 from hyptorch.pmath.autograd import artanh
 from hyptorch.pmath.scalings import compute_conformal_factor
-from hyptorch.utils.numeric import tanh
-
-from hyptorch.utils.numeric import norm
+from hyptorch.utils.numeric import norm, tanh
 
 
 def project(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:
@@ -27,13 +25,15 @@ def project(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Ten
 
     .. math::
 
+        \[
         \\text{proj}(\\mathbf{x}) =
         \\begin{cases}
             \\frac{x}{\\|x\\|} \\cdot r_{\\text{max}} & \\text{if } \\|x\\| > r_{\\text{max}} \\
             x & \\text{otherwise}
         \\end{cases}
         \\quad \\text{where} \\quad r_{\\text{max}} = \\frac{1 - \\epsilon}{\\sqrt{c}}
-
+        \]
+        
     where :math:`\\epsilon` is a small constant to ensure the point lies strictly within the ball.
 
     Parameters
@@ -96,7 +96,7 @@ def exponential_map(x: torch.Tensor, v: torch.Tensor, curvature: Union[float, to
     sqrt_c = torch.sqrt(c)
 
     v_norm = torch.clamp_min(norm(v), EPS)
-    lambda_x = compute_conformal_factor(x, curvature=c, keepdim=True)
+    lambda_x = compute_conformal_factor(x, curvature=c)
 
     return mobius_addition(x, tanh(sqrt_c * lambda_x * v_norm / 2) * v / (sqrt_c * v_norm), curvature=c)
 
@@ -170,7 +170,7 @@ def logarithmic_map(x: torch.Tensor, y: torch.Tensor, curvature: Union[float, to
 
     xy = mobius_addition(-x, y, curvature=c)
     xy_norm = norm(xy)
-    lambda_x = compute_conformal_factor(x, curvature=c, keepdim=True)
+    lambda_x = compute_conformal_factor(x, curvature=c)
 
     return 2 / (sqrt_c * lambda_x) * artanh(sqrt_c * xy_norm) * xy / xy_norm
 

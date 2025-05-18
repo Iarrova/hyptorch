@@ -16,3 +16,24 @@ Mappings
    :members:
    :undoc-members:
    :show-inheritance:
+
+Operations
+------------
+.. automodule:: hyptorch.pmath.operations
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Scalings
+------------
+.. automodule:: hyptorch.pmath.scalings
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Transformations
+------------
+.. automodule:: hyptorch.pmath.transformations
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -12,7 +12,10 @@ keywords = [
     "neural-networks",
     "machine-learning",
 ]
-dependencies = ["scipy>=1.15.2", "torch>=2.7.0", "torchvision>=0.22.0"]
+dependencies = [
+ "torch>=2.7.0",
+ "torchvision>=0.22.0",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/Iarrova/hyptorch"

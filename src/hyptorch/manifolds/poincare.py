@@ -143,8 +143,8 @@ class PoincareManifold(Manifold):
         c = torch.as_tensor(curvature).type_as(x)
 
         # Get conformal factors
-        lambda_x_val = compute_conformal_factor(x, curvature=c, keepdim=True)
-        lambda_y_val = compute_conformal_factor(y, curvature=c, keepdim=True)
+        lambda_x_val = compute_conformal_factor(x, curvature=c)
+        lambda_y_val = compute_conformal_factor(y, curvature=c)
 
         # Compute parallel transport
         return v * (lambda_y_val / lambda_x_val)

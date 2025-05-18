@@ -1,7 +1,3 @@
-"""
-Custom autograd functions for hyperbolic operations.
-"""
-
 import torch
 
 from hyptorch.config import CLAMP_MAX, CLAMP_MIN, EPS

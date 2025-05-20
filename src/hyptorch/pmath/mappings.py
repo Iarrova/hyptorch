@@ -25,14 +25,12 @@ def project(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Ten
 
     .. math::
 
-        \[
         \\text{proj}(\\mathbf{x}) =
         \\begin{cases}
             \\frac{x}{\\|x\\|} \\cdot r_{\\text{max}} & \\text{if } \\|x\\| > r_{\\text{max}} \\
             x & \\text{otherwise}
         \\end{cases}
         \\quad \\text{where} \\quad r_{\\text{max}} = \\frac{1 - \\epsilon}{\\sqrt{c}}
-        \]
         
     where :math:`\\epsilon` is a small constant to ensure the point lies strictly within the ball.
 

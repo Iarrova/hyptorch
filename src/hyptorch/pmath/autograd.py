@@ -76,18 +76,36 @@ class Arsinh(torch.autograd.Function):
 
 
 class RiemannianGradient(torch.autograd.Function):
+    """
+    Custom autograd function that applies a Riemannian gradient correction
+    for optimization on the Poincaré ball model of hyperbolic space.
+
+    This function modifies the gradient during the backward pass to account for
+    the geometry of the space, specifically adjusting the Euclidean gradient
+    to the corresponding Riemannian gradient under the Poincaré ball metric.
+
+    The forward pass is the identity function and simply saves the input and
+    curvature for use in the backward computation.
+    """
+
     @staticmethod
     def forward(ctx: FunctionCtx, x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:
+        """
+        Identity function that stores input and curvature for backward pass.
+        """
         c = torch.as_tensor(curvature).type_as(x)
         ctx.save_for_backward(x, c)
         return x
 
     @staticmethod
     def backward(ctx: FunctionCtx, grad_output: torch.Tensor) -> torch.Tensor:
+        """
+        Applies Riemannian correction to the gradient.
+        """
         input, c = ctx.saved_tensors
         # Compute Riemannian gradient scale factor
         scale = (1 - c * input.pow(2).sum(-1, keepdim=True)).pow(2) / 4
-        return grad_output * scale
+        return grad_output * scale, None
 
 
 def artanh(x: torch.Tensor) -> torch.Tensor:

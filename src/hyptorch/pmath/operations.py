@@ -95,7 +95,7 @@ def mobius_matrix_vector_multiplication(
     Given a matrix :math:`M` and a point :math:`\\mathbf{x} \\in \\mathbb{D}_c^n`, the Möbius matrix-vector multiplication is defined as:
 
     .. math::
-        M \\otimes_c \\mathbf{x} = \\frac{1}{\\sqrt{c}}\\tanh\\left(\\frac{\\|\\M\\mathbf{x}\\|}{\\|\\mathbf{x}\\|}\\tanh^{-1}{\\sqrt{c}\\|\\mathbf{x}\\|}\\right)\\frac{M \\mathbf{x}}{\\|M \\mathbf{x}\\|}
+        M \\otimes_c \\mathbf{x} = \\frac{1}{\\sqrt{c}}\\tanh\\left(\\frac{\\|M\\mathbf{x}\\|}{\\|\\mathbf{x}\\|}\\tanh^{-1}{\\sqrt{c}\\|\\mathbf{x}\\|}\\right)\\frac{M \\mathbf{x}}{\\|M \\mathbf{x}\\|}
 
 
 
@@ -142,6 +142,7 @@ def poincare_mean(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> tor
     The resulting average is then mapped back to the Poincaré ball.
 
     The weighted mean in the Klein model is given by:
+
     .. math::
         \\text{HypAve}(\\mathbf{x}_1, \\dots, \\mathbf{x}_n) = \\frac{\\sum_{i=1}^{n} \\lambda_i \\mathbf{x}_i}{\\sum_{i=1}^{n} \\lambda_i}
 

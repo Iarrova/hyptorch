@@ -113,8 +113,6 @@ class ToPoincare(nn.Module):
     ----------
     curvature : float
         Negative curvature of the Poincaré ball.
-    train_c : bool, optional
-        If True, the curvature will be a trainable parameter.
     train_x : bool, optional
         If True, the exponential map will use a trainable reference point.
         In this case, `ball_dim` must be specified.
@@ -127,10 +125,8 @@ class ToPoincare(nn.Module):
     def __init__(
         self,
         curvature: float,
-        train_c: bool = False,
         train_x: bool = False,
         ball_dim: Optional[int] = None,
-        riemannian: bool = True,
     ):
         super(ToPoincare, self).__init__()
 
@@ -142,29 +138,12 @@ class ToPoincare(nn.Module):
         else:
             self.register_parameter("xp", None)
 
-        # Initialize trainable curvature if requested
-        if train_c:
-            self.curvature = nn.Parameter(
-                torch.Tensor(
-                    [
-                        curvature,
-                    ]
-                )
-            )
-        else:
-            self.curvature = curvature
+        self.curvature = curvature
 
         self.train_x = train_x
 
-        # Initialize Riemannian gradient if requested
         self.riemannian = RiemannianGradient
-        # self.riemannian.curvature = curvature
-
-        # Set up gradient fix function
-        if riemannian:
-            self.grad_fix = lambda x: self.riemannian.apply(x, self.curvature)  # TODO: Added curvature!
-        else:
-            self.grad_fix = lambda x: x
+        self.grad_fix = lambda x: self.riemannian.apply(x, self.curvature)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -219,8 +198,6 @@ class FromPoincare(nn.Module):
     ----------
     curvature : float
         Negative curvature of the Poincaré ball.
-    train_c : bool, optional
-        If True, the curvature will be a trainable parameter.
     train_x : bool, optional
         If True, the logarithmic map will use a trainable reference point.
         In this case, `ball_dim` must be specified.
@@ -231,7 +208,6 @@ class FromPoincare(nn.Module):
     def __init__(
         self,
         curvature: float,
-        train_c: bool = False,
         train_x: bool = False,
         ball_dim: Optional[int] = None,
     ):
@@ -245,19 +221,7 @@ class FromPoincare(nn.Module):
         else:
             self.register_parameter("xp", None)
 
-        # Initialize trainable curvature if requested
-        if train_c:
-            self.curvature = nn.Parameter(
-                torch.Tensor(
-                    [
-                        curvature,
-                    ]
-                )
-            )
-        else:
-            self.curvature = curvature
-
-        self.train_c = train_c
+        self.curvature = curvature
         self.train_x = train_x
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -293,4 +257,4 @@ class FromPoincare(nn.Module):
         str
             String representation.
         """
-        return "train_c={}, train_x={}".format(self.train_c, self.train_x)
+        return "train_x={}".format(self.train_x)

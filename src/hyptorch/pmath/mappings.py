@@ -141,7 +141,7 @@ def logarithmic_map(x: torch.Tensor, y: torch.Tensor, curvature: Union[float, to
 
         \\log_{\\mathbf{x}}^c(\\mathbf{y}) =
         \\frac{2}{\\sqrt{c} \\lambda_{\\mathbf{x}}^c}
-        \\arctanh\\left( \\sqrt{c} \\| -\\mathbf{x} \\oplus_c \\mathbf{y} \\| \\right)
+        \\text{arctanh}\\left( \\sqrt{c} \\| -\\mathbf{x} \\oplus_c \\mathbf{y} \\| \\right)
         \\frac{-\\mathbf{x} \\oplus_c \\mathbf{y}}{\\| -\\mathbf{x} \\oplus_c \\mathbf{y} \\|}
 
     where :math:`\\lambda_{\\mathbf{x}}^c = \\frac{2}{1 - c \\|\\mathbf{x}\\|^2}` is the conformal factor and

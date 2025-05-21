@@ -95,14 +95,15 @@ def hyperbolic_softmax(
     torch.Tensor
         Logits tensor of shape `(batch_size, num_classes)` computed in hyperbolic space.
     """
+    c = torch.as_tensor(curvature).type_as(X)
     # Pre-compute common values
     lambda_pkc = 2 / (1 - curvature * P.pow(2).sum(dim=1))
-    k = lambda_pkc * torch.norm(A, dim=1) / torch.sqrt(curvature)
+    k = lambda_pkc * torch.norm(A, dim=1) / torch.sqrt(c)
 
     # Calculate mobius addition and other values
     mob_add = batch_mobius_addition(-P, X, curvature)
 
-    num = 2 * torch.sqrt(curvature) * torch.sum(mob_add * A.unsqueeze(1), dim=-1)
+    num = 2 * torch.sqrt(c) * torch.sum(mob_add * A.unsqueeze(1), dim=-1)
 
     denom = torch.norm(A, dim=1, keepdim=True) * (1 - curvature * mob_add.pow(2).sum(dim=2))
 

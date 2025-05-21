@@ -158,11 +158,11 @@ class ToPoincare(nn.Module):
 
         # Initialize Riemannian gradient if requested
         self.riemannian = RiemannianGradient
-        self.riemannian.curvature = curvature
+        # self.riemannian.curvature = curvature
 
         # Set up gradient fix function
         if riemannian:
-            self.grad_fix = lambda x: self.riemannian.apply(x)
+            self.grad_fix = lambda x: self.riemannian.apply(x, self.curvature)  # TODO: Added curvature!
         else:
             self.grad_fix = lambda x: x
 

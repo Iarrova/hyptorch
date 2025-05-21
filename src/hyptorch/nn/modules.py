@@ -1,7 +1,3 @@
-"""
-Higher-level neural network modules for hyperbolic space.
-"""
-
 import math
 from typing import Optional, Union
 
@@ -9,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 
+from hyptorch.nn.functional import hyperbolic_softmax
 from hyptorch.pmath.autograd import RiemannianGradient
 from hyptorch.pmath.mappings import (
     exponential_map,
@@ -17,21 +14,24 @@ from hyptorch.pmath.mappings import (
     logarithmic_map_at_zero,
     project,
 )
-from hyptorch.pmath.poincare import hyperbolic_softmax
 
 
 class HyperbolicMLR(nn.Module):
-    r"""
-    Module which performs softmax classification in Hyperbolic space.
+    """
+    Multinomial logistic regression (MLR) classifier operating in hyperbolic space.
+
+    This module performs classification by projecting learned parameters onto the Poincaré
+    ball and computing hyperbolic softmax logits. The formulation is designed to respect the
+    geometry of hyperbolic space.
 
     Parameters
     ----------
     ball_dim : int
-        Dimension of the Poincare ball.
+        Dimensionality of the Poincaré ball (input space).
     n_classes : int
-        Number of classes for classification.
+        Number of target classes.
     curvature : float
-        Negative ball curvature.
+        Negative curvature of the Poincaré ball.
     """
 
     def __init__(self, ball_dim: int, n_classes: int, curvature: float):
@@ -103,21 +103,25 @@ class HyperbolicMLR(nn.Module):
 
 
 class ToPoincare(nn.Module):
-    r"""
-    Module which maps points in n-dim Euclidean space to n-dim Poincare ball.
+    """
+    Maps Euclidean points to the Poincaré ball model of hyperbolic space.
+
+    This module supports optional training of the curvature and a learned reference point
+    for exponential mapping.
 
     Parameters
     ----------
     curvature : float
-        Negative ball curvature.
-    train_c : bool
-        Whether to train the curvature.
-    train_x : bool
-        Whether to train the reference point.
+        Negative curvature of the Poincaré ball.
+    train_c : bool, optional
+        If True, the curvature will be a trainable parameter.
+    train_x : bool, optional
+        If True, the exponential map will use a trainable reference point.
+        In this case, `ball_dim` must be specified.
     ball_dim : int, optional
-        Dimension of the Poincare ball (required if train_x=True).
-    riemannian : bool
-        Whether to use Riemannian gradient.
+        Dimensionality of the Poincaré ball. Required if `train_x=True`.
+    riemannian : bool, optional
+        If True, uses Riemannian gradient correction (default: True).
     """
 
     def __init__(
@@ -205,19 +209,23 @@ class ToPoincare(nn.Module):
 
 
 class FromPoincare(nn.Module):
-    r"""
-    Module which maps points in n-dim Poincare ball to n-dim Euclidean space.
+    """
+    Maps points from the Poincaré ball model back to Euclidean space.
+
+    This module supports optional training of the curvature and a learned reference point
+    for logarithmic mapping.
 
     Parameters
     ----------
     curvature : float
-        Negative ball curvature.
-    train_c : bool
-        Whether to train the curvature.
-    train_x : bool
-        Whether to train the reference point.
+        Negative curvature of the Poincaré ball.
+    train_c : bool, optional
+        If True, the curvature will be a trainable parameter.
+    train_x : bool, optional
+        If True, the logarithmic map will use a trainable reference point.
+        In this case, `ball_dim` must be specified.
     ball_dim : int, optional
-        Dimension of the Poincare ball (required if train_x=True).
+        Dimensionality of the Poincaré ball. Required if `train_x=True`.
     """
 
     def __init__(

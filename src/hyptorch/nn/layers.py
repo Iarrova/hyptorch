@@ -1,7 +1,3 @@
-"""
-Basic neural network layers for hyperbolic space.
-"""
-
 import math
 from typing import Optional, Union
 
@@ -16,18 +12,21 @@ from hyptorch.pmath.operations import mobius_addition, mobius_matrix_vector_mult
 
 class HypLinear(nn.Module):
     """
-    Hyperbolic linear layer.
+    Hyperbolic linear transformation layer using Möbius operations.
+
+    Applies a Möbius matrix-vector multiplication followed by an optional bias addition
+    in the Poincaré ball model of hyperbolic space.
 
     Parameters
     ----------
     in_features : int
-        Number of input features.
+        Dimensionality of input features.
     out_features : int
-        Number of output features.
+        Dimensionality of output features.
     curvature : float
-        Negative ball curvature.
+        Negative curvature value of the Poincaré ball.
     bias : bool
-        Whether to use bias.
+        If True, includes a learnable bias term.
     """
 
     def __init__(self, in_features: int, out_features: int, curvature: float, bias: bool = True):
@@ -44,7 +43,10 @@ class HypLinear(nn.Module):
 
     def reset_parameters(self):
         """
-        Reset the parameters of the module.
+        Initialize weights and optional bias using Kaiming uniform distribution.
+
+        Weights are initialized with Kaiming uniform initializer.
+        Bias is uniformly sampled within a bound based on fan-in.
         """
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
         if self.bias is not None:
@@ -56,19 +58,22 @@ class HypLinear(nn.Module):
         self, x: torch.Tensor, curvature: Optional[Union[float, torch.Tensor]] = None
     ) -> torch.Tensor:
         """
-        Forward pass for hyperbolic linear layer.
+        Perform forward pass through the hyperbolic linear layer.
+
+        Projects input onto the Poincaré ball using Möbius matrix-vector multiplication
+        followed by optional Möbius bias addition, and returns the result reprojected to the manifold.
 
         Parameters
         ----------
         x : tensor
-            Input tensor.
+            Input tensor of shape (batch_size, in_features).
         curvature : float or tensor, optional
-            Negative ball curvature. If None, uses the class attribute.
+            Negative curvature. If None, uses the layer's stored curvature.
 
         Returns
         -------
         tensor
-            Output tensor.
+            Output tensor of shape (batch_size, out_features) in the Poincaré ball.
         """
         # Use provided curvature or fall back to class attribute
         if curvature is None:
@@ -89,12 +94,12 @@ class HypLinear(nn.Module):
 
     def extra_repr(self) -> str:
         """
-        Return a string representation of module parameters.
+        Return a string representation of the layer configuration.
 
         Returns
         -------
         str
-            String representation.
+            Human-readable summary of the module's parameters.
         """
         return "in_features={}, out_features={}, bias={}, curvature={}".format(
             self.in_features, self.out_features, self.bias is not None, self.curvature
@@ -103,18 +108,21 @@ class HypLinear(nn.Module):
 
 class ConcatPoincareLayer(nn.Module):
     """
-    Layer for concatenating two points in Poincare ball.
+    Concatenation layer for combining two hyperbolic vectors in the Poincaré ball.
+
+    Each input is independently transformed into a shared hyperbolic space using
+    separate `HypLinear` layers, and then combined using Möbius addition.
 
     Parameters
     ----------
     d1 : int
-        Dimension of first input.
+        Dimensionality of the first input.
     d2 : int
-        Dimension of second input.
+        Dimensionality of the second input.
     d_out : int
-        Dimension of output.
+        Dimensionality of the shared output space.
     curvature : float
-        Negative ball curvature.
+        Negative curvature of the hyperbolic space.
     """
 
     def __init__(self, d1: int, d2: int, d_out: int, curvature: float):
@@ -135,21 +143,24 @@ class ConcatPoincareLayer(nn.Module):
         curvature: Optional[Union[float, torch.Tensor]] = None,
     ) -> torch.Tensor:
         """
-        Forward pass for concatenation layer.
+        Perform forward pass through the concatenation layer.
+
+        Transforms and merges two input tensors into a single tensor in the
+        hyperbolic space using Möbius operations.
 
         Parameters
         ----------
         x1 : tensor
-            First input tensor.
+            First input tensor of shape (batch_size, d1).
         x2 : tensor
-            Second input tensor.
+            Second input tensor of shape (batch_size, d2).
         curvature : float or tensor, optional
-            Negative ball curvature. If None, uses the class attribute.
+            Negative curvature of the Poincaré ball. If None, uses the stored value.
 
         Returns
         -------
         tensor
-            Concatenated tensor in Poincare ball.
+            Combined tensor of shape (batch_size, d_out) in the Poincaré ball.
         """
         # Use provided curvature or fall back to class attribute
         if curvature is None:
@@ -164,24 +175,26 @@ class ConcatPoincareLayer(nn.Module):
 
     def extra_repr(self) -> str:
         """
-        Return a string representation of module parameters.
+        Return a string representation of the layer configuration.
 
         Returns
         -------
         str
-            String representation.
+            Human-readable summary of input and output dimensions.
         """
         return "dims {} and {} ---> dim {}".format(self.d1, self.d2, self.d_out)
 
 
 class HyperbolicDistanceLayer(nn.Module):
     """
-    Layer for computing hyperbolic distance between points.
+    Layer to compute pairwise hyperbolic distance between input vectors.
+
+    Operates in the Poincaré ball using the distance function for hyperbolic geometry.
 
     Parameters
     ----------
     curvature : float
-        Negative ball curvature.
+        Negative curvature of the hyperbolic space.
     """
 
     def __init__(self, curvature: float):
@@ -195,21 +208,21 @@ class HyperbolicDistanceLayer(nn.Module):
         curvature: Optional[Union[float, torch.Tensor]] = None,
     ) -> torch.Tensor:
         """
-        Forward pass for distance layer.
+        Compute hyperbolic distance between two input tensors.
 
         Parameters
         ----------
         x1 : tensor
-            First input tensor.
+            First input tensor of shape (batch_size, dim).
         x2 : tensor
-            Second input tensor.
+            Second input tensor of shape (batch_size, dim).
         curvature : float or tensor, optional
-            Negative ball curvature. If None, uses the class attribute.
+            Negative curvature of the Poincaré ball. If None, uses the stored value.
 
         Returns
         -------
         tensor
-            Hyperbolic distance between inputs.
+            Tensor of distances of shape (batch_size, 1).
         """
         # Use provided curvature or fall back to class attribute
         if curvature is None:
@@ -220,11 +233,11 @@ class HyperbolicDistanceLayer(nn.Module):
 
     def extra_repr(self) -> str:
         """
-        Return a string representation of module parameters.
+        Return a string representation of the layer configuration.
 
         Returns
         -------
         str
-            String representation.
+            Human-readable summary of the curvature.
         """
         return "curvature={}".format(self.curvature)

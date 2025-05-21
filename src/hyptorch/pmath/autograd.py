@@ -9,12 +9,34 @@ from hyptorch.config import CLAMP_MAX, CLAMP_MIN, EPS
 class Artanh(torch.autograd.Function):
     @staticmethod
     def forward(ctx: FunctionCtx, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass for the inverse hyperbolic tangent function.
+
+        The input tensor is clamped to the range [-1 + EPS, 1 - EPS] to avoid numerical instability.
+        This function computes the inverse hyperbolic tangent of the input tensor using the formula:
+
+        .. math::
+            \\text{artanh}(x) = \\frac{1}{2} \\log\\left(\\frac{1+x}{1-x}\\right)
+
+        where :math:`x` is the input tensor.
+        """
         x = x.clamp(CLAMP_MIN, CLAMP_MAX)
         ctx.save_for_backward(x)
         return (torch.log_(1 + x).sub_(torch.log_(1 - x))).mul_(0.5)
 
     @staticmethod
     def backward(ctx: FunctionCtx, grad_output: torch.Tensor) -> torch.Tensor:
+        """
+        Backward pass for the inverse hyperbolic tangent function.
+
+        This function computes the gradient of the inverse hyperbolic tangent with respect to the input tensor.
+        The gradient is computed using the formula:
+
+        .. math::
+            \\frac{d}{dx} \\text{artanh}(x) = \\frac{1}{1 - x^2}
+
+        where :math:`x` is the input tensor.
+        """
         (input,) = ctx.saved_tensors
         return grad_output / (1 - input**2)
 
@@ -22,19 +44,38 @@ class Artanh(torch.autograd.Function):
 class Arsinh(torch.autograd.Function):
     @staticmethod
     def forward(ctx: FunctionCtx, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass for the inverse hyperbolic sine function.
+
+        The input tensor is clamped to the range [EPS, +inf) to avoid numerical instability.
+        This function computes the inverse hyperbolic sine of the input tensor using the formula:
+
+        .. math::
+            \\text{arsinh}(x) = \\log\\left(x + \\sqrt{1+x^2}\\right)
+
+        where :math:`x` is the input tensor.
+        """
         ctx.save_for_backward(x)
         return (x + torch.sqrt_(1 + x.pow(2))).clamp_min_(EPS).log_()
 
     @staticmethod
     def backward(ctx: FunctionCtx, grad_output: torch.Tensor) -> torch.Tensor:
+        """
+        Backward pass for the inverse hyperbolic sine function.
+
+        This function computes the gradient of the inverse hyperbolic sine with respect to the input tensor.
+        The gradient is computed using the formula:
+
+        .. math::
+            \\frac{d}{dx} \\text{arsinh}(x) = \\frac{1}{\\sqrt{1+x^2}}
+
+        where :math:`x` is the input tensor.
+        """
         (input,) = ctx.saved_tensors
         return grad_output / (1 + input**2) ** 0.5
 
 
 class RiemannianGradient(torch.autograd.Function):
-    # TODO: Add curvature as a parameter
-    # curvature = 1.0
-
     @staticmethod
     def forward(ctx: FunctionCtx, x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:
         c = torch.as_tensor(curvature).type_as(x)
@@ -50,54 +91,8 @@ class RiemannianGradient(torch.autograd.Function):
 
 
 def artanh(x: torch.Tensor) -> torch.Tensor:
-    """
-    Inverse hyperbolic tangent function.
-
-    Parameters
-    ----------
-    x : tensor
-        Input tensor.
-
-    Returns
-    -------
-    tensor
-        Inverse hyperbolic tangent of the input tensor.
-    """
     return Artanh.apply(x)
 
 
 def arsinh(x: torch.Tensor) -> torch.Tensor:
-    """
-    Inverse hyperbolic sine function.
-
-    Parameters
-    ----------
-    x : tensor
-        Input tensor.
-
-    Returns
-    -------
-    tensor
-        Inverse hyperbolic sine of the input tensor.
-    """
     return Arsinh.apply(x)
-
-
-def arcosh(x: torch.Tensor, eps: float = EPS) -> torch.Tensor:
-    """
-    Inverse hyperbolic cosine function.
-
-    Parameters
-    ----------
-    x : tensor
-        Input tensor.
-    eps : float
-        Epsilon for numerical stability.
-
-    Returns
-    -------
-    tensor
-        Inverse hyperbolic cosine of the input tensor.
-    """
-    x = x.clamp(-1 + eps, 1 - eps)
-    return torch.log(x + torch.sqrt(1 + x) * torch.sqrt(x - 1))

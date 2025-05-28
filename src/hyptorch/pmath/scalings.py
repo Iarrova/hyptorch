@@ -2,6 +2,9 @@ from typing import Union
 
 import torch
 
+from hyptorch.utils.common import squared_norm
+from hyptorch.utils.validation import validate_curvature
+
 
 def compute_conformal_factor(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:
     """
@@ -28,8 +31,8 @@ def compute_conformal_factor(x: torch.Tensor, curvature: Union[float, torch.Tens
     torch.Tensor
         The conformal factor at the input point.
     """
-    c = torch.as_tensor(curvature).type_as(x)
-    return 2 / (1 - c * x.pow(2).sum(-1, keepdim=True))
+    c = validate_curvature(curvature)
+    return 2 / (1 - c * squared_norm(x))
 
 
 def lorenz_factor(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:
@@ -58,4 +61,4 @@ def lorenz_factor(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> tor
     torch.Tensor
         Lorentz factor at the input point.
     """
-    return 1 / torch.sqrt(1 - curvature * x.pow(2).sum(dim=-1, keepdim=True))
+    return 1 / torch.sqrt(1 - curvature * squared_norm(x))

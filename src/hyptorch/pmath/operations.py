@@ -3,11 +3,12 @@ from typing import Union
 import torch
 
 from hyptorch.config import EPS
-from hyptorch.pmath.autograd import artanh
+from hyptorch.pmath.autograd import artanh, tanh
 from hyptorch.pmath.mappings import project
 from hyptorch.pmath.scalings import lorenz_factor
 from hyptorch.pmath.transformations import klein_to_poincare, poincare_to_klein
-from hyptorch.utils.numeric import norm, tanh
+from hyptorch.utils.common import dot_product, norm, squared_norm
+from hyptorch.utils.validation import validate_curvature
 
 
 def mobius_addition(x: torch.Tensor, y: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:
@@ -23,25 +24,21 @@ def mobius_addition(x: torch.Tensor, y: torch.Tensor, curvature: Union[float, to
 
     Parameters
     ----------
-    x : torch.Tensor
-        Point on the Poincaré ball.
-    y : torch.Tensor
-        Point on the Poincaré ball.
+    x, y : torch.Tensor
+        Points on the Poincaré ball.
     curvature : float or torch.Tensor
         Ball negative curvature.
 
     Returns
     -------
     torch.Tensor
-        The result of mobius addition.
+        Result of Möbius addition.
     """
-    c = torch.as_tensor(curvature).type_as(x)
+    c = validate_curvature(curvature)
 
-    # x2 and y2 are the squared norms of x and y
-    # xy is the dot product of x and y
-    x2 = x.pow(2).sum(dim=-1, keepdim=True)
-    y2 = y.pow(2).sum(dim=-1, keepdim=True)
-    xy = (x * y).sum(dim=-1, keepdim=True)
+    x2 = squared_norm(x)
+    y2 = squared_norm(y)
+    xy = dot_product(x, y)
 
     numerator = (1 + 2 * c * xy + c * y2) * x + (1 - c * x2) * y
     denominator = 1 + 2 * c * xy + c**2 * x2 * y2
@@ -70,8 +67,8 @@ def batch_mobius_addition(
         Batch mobius addition result.
     """
     xy = torch.einsum("ij,kj->ik", (x, y))  # B x C
-    x2 = x.pow(2).sum(-1, keepdim=True)  # B x 1
-    y2 = y.pow(2).sum(-1, keepdim=True)  # C x 1
+    x2 = squared_norm(x)  # B x 1
+    y2 = squared_norm(y)  # C x 1
 
     num = 1 + 2 * curvature * xy + curvature * y2.permute(1, 0)  # B x C
     num = num.unsqueeze(2) * x.unsqueeze(1)
@@ -113,10 +110,10 @@ def mobius_matrix_vector_multiplication(
     torch.Tensor
         Result of the Möbius matrix-vector multiplication.
     """
-    c = torch.as_tensor(curvature).type_as(x)
+    c = validate_curvature(curvature)
     sqrt_c = torch.sqrt(c)
 
-    x_norm = torch.clamp_min(norm(x), EPS)
+    x_norm = norm(x, safe=True)
 
     mx = x @ matrix.transpose(-1, -2)
     mx_norm = norm(mx)

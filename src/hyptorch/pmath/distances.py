@@ -4,7 +4,8 @@ import torch
 
 from hyptorch.pmath.autograd import artanh
 from hyptorch.pmath.operations import mobius_addition
-from hyptorch.utils.numeric import norm
+from hyptorch.utils.common import norm
+from hyptorch.utils.validation import validate_curvature
 
 
 def distance(x: torch.Tensor, y: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:
@@ -32,7 +33,7 @@ def distance(x: torch.Tensor, y: torch.Tensor, curvature: Union[float, torch.Ten
     torch.Tensor
         Geodesic distance between x and y.
     """
-    c = torch.as_tensor(curvature).type_as(x)
+    c = validate_curvature(curvature)
     sqrt_c = torch.sqrt(c)
 
     return 2 / sqrt_c * artanh(sqrt_c * norm(mobius_addition(-x, y, c)))

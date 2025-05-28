@@ -2,6 +2,9 @@ from typing import Union
 
 import torch
 
+from hyptorch.utils.common import squared_norm
+from hyptorch.utils.validation import validate_curvature
+
 
 def poincare_to_klein(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:
     """
@@ -27,8 +30,8 @@ def poincare_to_klein(x: torch.Tensor, curvature: Union[float, torch.Tensor]) ->
     torch.Tensor
         Corresponding point in the Klein model.
     """
-    c = torch.as_tensor(curvature).type_as(x)
-    return (2 * x) / (1 + c * x.pow(2).sum(-1, keepdim=True))
+    c = validate_curvature(curvature)
+    return (2 * x) / (1 + c * squared_norm(x))
 
 
 def klein_to_poincare(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:
@@ -57,5 +60,5 @@ def klein_to_poincare(x: torch.Tensor, curvature: Union[float, torch.Tensor]) ->
     torch.Tensor
         Corresponding point on the Poincaré ball.
     """
-    c = torch.as_tensor(curvature).type_as(x)
-    return x / (1 + torch.sqrt(1 - c * x.pow(2).sum(-1, keepdim=True)))
+    c = validate_curvature(curvature)
+    return x / (1 + torch.sqrt(1 - c * squared_norm(x)))

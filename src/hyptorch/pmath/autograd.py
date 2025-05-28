@@ -3,7 +3,7 @@ from typing import Union
 import torch
 from torch.autograd.function import FunctionCtx
 
-from hyptorch.config import CLAMP_MAX, CLAMP_MIN, EPS
+from hyptorch.config import CLAMP_MAX, CLAMP_MIN, EPS, TANH_CLAMP
 
 
 class Artanh(torch.autograd.Function):
@@ -114,3 +114,22 @@ def artanh(x: torch.Tensor) -> torch.Tensor:
 
 def arsinh(x: torch.Tensor) -> torch.Tensor:
     return Arsinh.apply(x)
+
+
+def tanh(x: torch.Tensor, clamp: float = TANH_CLAMP) -> torch.Tensor:
+    """
+    Numerically stable implementation of tanh.
+
+    Parameters
+    ----------
+    x : tensor
+        Input tensor.
+    clamp : float
+        Clamping value to ensure numerical stability.
+
+    Returns
+    -------
+    tensor
+        Tanh of the input tensor.
+    """
+    return x.clamp(-clamp, clamp).tanh()

@@ -2,10 +2,11 @@ from typing import Union
 
 import torch
 
-from hyptorch.config import EPS
-from hyptorch.pmath.autograd import artanh
+from hyptorch.config import MAX_NORM_SCALE
+from hyptorch.pmath.autograd import artanh, tanh
 from hyptorch.pmath.scalings import compute_conformal_factor
-from hyptorch.utils.numeric import norm, tanh
+from hyptorch.utils.common import norm
+from hyptorch.utils.validation import validate_curvature
 
 
 def project(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:
@@ -46,11 +47,12 @@ def project(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Ten
     torch.Tensor
         A projected point lying strictly within the Poincaré ball.
     """
-    c = torch.as_tensor(curvature).type_as(x)
-    # TODO: Check the impact of changing the value of 1e-3
-    r_max = (1 - 1e-3) / torch.sqrt(c)  # Maximum norm allowed by manifold
+    c = validate_curvature(curvature)
 
-    x_norm = torch.clamp_min(norm(x), EPS)
+    # TODO: Check the impact of changing the value of 1e-3
+    r_max = (MAX_NORM_SCALE) / torch.sqrt(c)
+    x_norm = norm(x, safe=True)
+
     return torch.where(x_norm > r_max, x / x_norm * r_max, x)
 
 
@@ -90,10 +92,10 @@ def exponential_map(x: torch.Tensor, v: torch.Tensor, curvature: Union[float, to
     """
     from hyptorch.pmath.operations import mobius_addition
 
-    c = torch.as_tensor(curvature).type_as(x)
+    c = validate_curvature(curvature)
     sqrt_c = torch.sqrt(c)
 
-    v_norm = torch.clamp_min(norm(v), EPS)
+    v_norm = norm(v, safe=True)
     lambda_x = compute_conformal_factor(x, curvature=c)
 
     return mobius_addition(x, tanh(sqrt_c * lambda_x * v_norm / 2) * v / (sqrt_c * v_norm), curvature=c)
@@ -115,10 +117,10 @@ def exponential_map_at_zero(v: torch.Tensor, curvature: Union[float, torch.Tenso
     torch.Tensor
         The resulting point on the Poincaré ball after applying the exponential map.
     """
-    c = torch.as_tensor(curvature).type_as(v)
+    c = validate_curvature(curvature)
     sqrt_c = torch.sqrt(c)
 
-    v_norm = torch.clamp_min(norm(v), EPS)
+    v_norm = norm(v, safe=True)
 
     return tanh(sqrt_c * v_norm) * v / (sqrt_c * v_norm)
 
@@ -163,7 +165,7 @@ def logarithmic_map(x: torch.Tensor, y: torch.Tensor, curvature: Union[float, to
     """
     from hyptorch.pmath.operations import mobius_addition
 
-    c = torch.as_tensor(curvature).type_as(x)
+    c = validate_curvature(curvature)
     sqrt_c = torch.sqrt(c)
 
     xy = mobius_addition(-x, y, curvature=c)
@@ -189,9 +191,9 @@ def logarithmic_map_at_zero(y: torch.Tensor, curvature: Union[float, torch.Tenso
     torch.Tensor
         Tangent vector that transports 0 to y.
     """
-    c = torch.as_tensor(curvature).type_as(y)
+    c = validate_curvature(curvature)
     sqrt_c = torch.sqrt(c)
 
-    y_norm = torch.clamp_min(norm(y), EPS)
+    y_norm = norm(y, safe=True)
 
     return y / y_norm / sqrt_c * artanh(sqrt_c * y_norm)

@@ -4,6 +4,7 @@ import torch
 
 from hyptorch.pmath.autograd import arsinh
 from hyptorch.pmath.operations import batch_mobius_addition
+from hyptorch.utils.validation import validate_curvature
 
 
 def hyperbolic_softmax_loss(
@@ -46,12 +47,14 @@ def hyperbolic_softmax_loss(
     probs = hyperbolic_softmax(logits, weights, points, curvature)
     log_probs = torch.log(probs + 1e-8)
 
+    losses = -log_probs.gather(1, targets.unsqueeze(-1))
+
     if reduction == "none":
-        return -log_probs.gather(1, targets.unsqueeze(-1))
+        return losses
     elif reduction == "sum":
-        return -log_probs.gather(1, targets.unsqueeze(-1)).sum()
+        return losses.sum()
     else:  # mean
-        return -log_probs.gather(1, targets.unsqueeze(-1)).mean()
+        return losses.mean()
 
 
 def hyperbolic_softmax(
@@ -95,7 +98,7 @@ def hyperbolic_softmax(
     torch.Tensor
         Logits tensor of shape `(batch_size, num_classes)` computed in hyperbolic space.
     """
-    c = torch.as_tensor(curvature).type_as(X)
+    c = validate_curvature(curvature)
     # Pre-compute common values
     lambda_pkc = 2 / (1 - curvature * P.pow(2).sum(dim=1))
     k = lambda_pkc * torch.norm(A, dim=1) / torch.sqrt(c)

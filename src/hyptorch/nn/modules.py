@@ -97,7 +97,6 @@ class ToPoincare(nn.Module):
     def __init__(self, curvature: float):
         super(ToPoincare, self).__init__()
 
-        self.register_parameter("xp", None)
         self.curvature = curvature
 
         self.riemannian = RiemannianGradient
@@ -143,9 +142,6 @@ class FromPoincare(nn.Module):
 
     def __init__(self, curvature: float):
         super(FromPoincare, self).__init__()
-
-        # Initialize trainable reference point if requested
-        self.register_parameter("xp", None)
 
         self.curvature = curvature
 

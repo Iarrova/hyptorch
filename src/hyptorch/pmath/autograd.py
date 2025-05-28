@@ -22,7 +22,7 @@ class Artanh(torch.autograd.Function):
         """
         x = x.clamp(CLAMP_MIN, CLAMP_MAX)
         ctx.save_for_backward(x)
-        return (torch.log_(1 + x).sub_(torch.log_(1 - x))).mul_(0.5)
+        return 0.5 * (torch.log(1 + x) - torch.log(1 - x))
 
     @staticmethod
     def backward(ctx: FunctionCtx, grad_output: torch.Tensor) -> torch.Tensor:

@@ -131,8 +131,6 @@ class ConcatPoincareLayer(nn.Module):
             First input tensor of shape (batch_size, d1).
         x2 : tensor
             Second input tensor of shape (batch_size, d2).
-        curvature : float or tensor, optional
-            Negative curvature of the Poincaré ball. If None, uses the stored value.
 
         Returns
         -------

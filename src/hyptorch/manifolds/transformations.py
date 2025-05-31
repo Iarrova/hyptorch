@@ -2,7 +2,7 @@ from typing import Union
 
 import torch
 
-from hyptorch.utils.common import squared_norm
+from hyptorch.operations.tensor import squared_norm
 from hyptorch.utils.validation import validate_curvature
 
 
@@ -62,3 +62,32 @@ def klein_to_poincare(x: torch.Tensor, curvature: Union[float, torch.Tensor]) ->
     """
     c = validate_curvature(curvature)
     return x / (1 + torch.sqrt(1 - c * squared_norm(x)))
+
+
+def lorenz_factor(x: torch.Tensor, curvature: Union[float, torch.Tensor]) -> torch.Tensor:
+    """
+    Compute the Lorentz (gamma) factor for a point on the Klein disk model of hyperbolic space.
+
+    The Lorentz factor arises in the hyperboloid and Klein models of hyperbolic geometry and is used to account for the distortion introduced
+    by the curvature when transforming between Euclidean and hyperbolic representations.
+
+    The Lorentz factor for a point :math:`\\mathbf{x}` with curvature :math:`c` is given by:
+
+    .. math::
+        \\gamma_{\\mathbf{x}}^c = \\frac{1}{\\sqrt{1 - c \\|\\mathbf{x}\\|^2}}
+
+    where :math:`\\|\\mathbf{x}\\|` is the Euclidean norm of the point in the Klein disk model.
+
+    Parameters
+    ----------
+    x : torch.Tensor
+        Point on the Klein disk.
+    curvature : float
+        Negative curvature of the space.
+
+    Returns
+    -------
+    torch.Tensor
+        Lorentz factor at the input point.
+    """
+    return 1 / torch.sqrt(1 - curvature * squared_norm(x))

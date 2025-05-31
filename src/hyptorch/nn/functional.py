@@ -1,10 +1,50 @@
-from typing import Union
-
 import torch
 
-from hyptorch.pmath.autograd import arsinh
-from hyptorch.pmath.operations import batch_mobius_addition
-from hyptorch.utils.validation import validate_curvature
+from hyptorch.config import NumericalConstants, ReductionType
+from hyptorch.manifolds.base import HyperbolicManifold
+from hyptorch.manifolds.poincare import PoincareBall
+from hyptorch.operations.tensor import squared_norm
+
+
+class HyperbolicFunctional:
+    def __init__(self, manifold: HyperbolicManifold):
+        self.manifold = manifold
+
+    def hyperbolic_softmax(
+        self, x: torch.Tensor, weights: torch.Tensor, points: torch.Tensor
+    ) -> torch.Tensor:
+        if not isinstance(self.manifold, PoincareBall):
+            raise NotImplementedError("Hyperbolic softmax only implemented for Poincaré ball")
+
+        c = self.manifold.curvature
+        sqrt_c = torch.sqrt(c)
+
+        lambda_pkc = 2 / (1 - c * points.pow(2).sum(dim=1))
+        k = lambda_pkc * torch.norm(weights, dim=1) / sqrt_c
+
+        mob_add = self._batch_mobius_addition(-points, x)
+
+        num = 2 * sqrt_c * torch.sum(mob_add * weights.unsqueeze(1), dim=-1)
+        denom = torch.norm(weights, dim=1, keepdim=True) * (1 - c * mob_add.pow(2).sum(dim=2))
+
+        logits = k.unsqueeze(1) * torch.asinh(num / denom)
+
+        return logits.permute(1, 0)
+
+    def _batch_mobius_addition(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        c = self.manifold.curvature
+
+        xy = torch.einsum("ij,kj->ik", (x, y))
+        x2 = squared_norm(x)
+        y2 = squared_norm(y)
+
+        num = 1 + 2 * c * xy + c * y2.permute(1, 0)
+        num = num.unsqueeze(2) * x.unsqueeze(1)
+        num = num + (1 - c * x2).unsqueeze(2) * y
+
+        denom = 1 + 2 * c * xy + c**2 * x2 * y2.permute(1, 0)
+
+        return num / (denom.unsqueeze(2) + NumericalConstants.EPS)
 
 
 def hyperbolic_softmax_loss(
@@ -12,104 +52,19 @@ def hyperbolic_softmax_loss(
     targets: torch.Tensor,
     weights: torch.Tensor,
     points: torch.Tensor,
-    curvature: float,
-    reduction: str = "mean",
+    manifold: HyperbolicManifold,
+    reduction: ReductionType = ReductionType.MEAN,
 ) -> torch.Tensor:
-    """
-    Compute the softmax cross-entropy loss in hyperbolic space (Poincaré ball model).
+    functional = HyperbolicFunctional(manifold)
+    probs = functional.hyperbolic_softmax(logits, weights, points)
 
-    This function applies a softmax operation adapted for hyperbolic geometry, using
-    Möbius operations and curvature-aware logits. The log-probabilities are computed from
-    the hyperbolic softmax, and the standard cross-entropy loss is applied to the target labels.
-
-    Parameters
-    ----------
-    logits : torch.Tensor
-        Raw class scores (logits) for each input.
-    targets : torch.Tensor
-        Ground truth class indices.
-    weights : torch.Tensor
-        Weight vectors associated with each class.
-    points : torch.Tensor
-        Embedding points in the Poincaré ball for each input.
-    curvature : float
-        Negative curvature of the hyperbolic space.
-    reduction : str, optional
-        Specifies the reduction to apply to the output:
-        'none' returns the loss per example, 'sum' returns the sum,
-        and 'mean' (default) returns the average loss.
-
-    Returns
-    -------
-    torch.Tensor
-        The computed softmax loss in hyperbolic space.
-    """
-    probs = hyperbolic_softmax(logits, weights, points, curvature)
     log_probs = torch.log(probs + 1e-8)
 
     losses = -log_probs.gather(1, targets.unsqueeze(-1))
 
-    if reduction == "none":
+    if reduction == ReductionType.NONE:
         return losses
-    elif reduction == "sum":
+    elif reduction == ReductionType.SUM:
         return losses.sum()
-    else:  # mean
+    else:
         return losses.mean()
-
-
-def hyperbolic_softmax(
-    X: torch.Tensor,
-    A: torch.Tensor,
-    P: torch.Tensor,
-    curvature: Union[float, torch.Tensor],
-) -> torch.Tensor:
-    """
-    Compute class scores in hyperbolic space using a geometry-aware softmax formulation.
-
-    This function calculates a softmax-like output by projecting data into hyperbolic space
-    using Möbius addition and curvature-aware transformations. It uses Lorentz scaling and
-    distance-aware terms to produce logits that respect hyperbolic geometry.
-
-    The logits are computed as:
-
-    .. math::
-        \\text{logit}_{ij} = k_j \\cdot \\sinh^{-1} \\left(
-        \\frac{2 \\sqrt{c} \\langle \\mathbf{a}_j, -\\mathbf{p}_j \\oplus \\mathbf{x}_i \\rangle}
-             {\\|\\mathbf{a}_j\\| (1 - c \\| -\\mathbf{p}_j \\oplus \\mathbf{x}_i \\|^2)}
-        \\right)
-
-    where :math:`\\oplus` denotes Möbius addition, :math:`c` is the negative curvature,
-    :math:`\\mathbf{a}_j` and :math:`\\mathbf{p}_j` are the weight and point for class :math:`j`.
-    TODO: Change to the formula in the paper.
-
-    Parameters
-    ----------
-    X : torch.Tensor
-        Input tensor of shape `(batch_size, dim)`.
-    A : torch.Tensor
-        Weight tensor of shape `(num_classes, dim)`.
-    P : torch.Tensor
-        Point tensor of shape `(num_classes, dim)`, representing class anchors in the Poincaré ball.
-    curvature : float or torch.Tensor
-        Negative curvature of the hyperbolic space.
-
-    Returns
-    -------
-    torch.Tensor
-        Logits tensor of shape `(batch_size, num_classes)` computed in hyperbolic space.
-    """
-    c = validate_curvature(curvature)
-    # Pre-compute common values
-    lambda_pkc = 2 / (1 - curvature * P.pow(2).sum(dim=1))
-    k = lambda_pkc * torch.norm(A, dim=1) / torch.sqrt(c)
-
-    # Calculate mobius addition and other values
-    mob_add = batch_mobius_addition(-P, X, curvature)
-
-    num = 2 * torch.sqrt(c) * torch.sum(mob_add * A.unsqueeze(1), dim=-1)
-
-    denom = torch.norm(A, dim=1, keepdim=True) * (1 - curvature * mob_add.pow(2).sum(dim=2))
-
-    logit = k.unsqueeze(1) * arsinh(num / denom)
-
-    return logit.permute(1, 0)

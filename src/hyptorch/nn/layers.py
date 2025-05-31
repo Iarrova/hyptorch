@@ -44,11 +44,11 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.manifold.project(x)
-        output = self.manifold.matrix_vector_multiplication(self.weight, x)
+        output = self.manifold.mobius_matvec(self.weight, x)
 
         if self.bias is not None:
-            bias_on_manifold = self.manifold.exponential_map_at_zero(self.bias)
-            output = self.manifold.add(output, bias_on_manifold)
+            bias_on_manifold = self.manifold.exponential_map_at_origin(self.bias)
+            output = self.manifold.mobius_add(output, bias_on_manifold)
 
         return self.manifold.project(output)
 
@@ -74,7 +74,7 @@ class ConcatPoincareLayer(HyperbolicLayer):
         out1 = self.layer1(x1)
         out2 = self.layer2(x2)
 
-        return self.manifold.add(out1, out2)
+        return self.manifold.mobius_add(out1, out2)
 
     def extra_repr(self) -> str:
         return f"d1={self.d1}, d2={self.d2}, d_out={self.d_out}"

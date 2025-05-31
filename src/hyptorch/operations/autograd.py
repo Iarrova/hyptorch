@@ -10,10 +10,10 @@ class RiemannianGradient(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx: FunctionCtx, grad_output: torch.Tensor) -> tuple[torch.Tensor, None]:
-        x, c = ctx.saved_tensors
-        scale = (1 - c * x.pow(2).sum(-1, keepdim=True)).pow(2) / 4
+        x, curvature = ctx.saved_tensors
+        scale = (1 - curvature * x.pow(2).sum(-1, keepdim=True)).pow(2) / 4
         return grad_output * scale, None
 
 
-def riemannian_gradient(x: torch.Tensor, curvature: torch.Tensor) -> torch.Tensor:
+def apply_riemannian_gradient(x: torch.Tensor, curvature: torch.Tensor):
     return RiemannianGradient.apply(x, curvature)

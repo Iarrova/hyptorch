@@ -5,10 +5,10 @@ import torch.nn as nn
 
 from hyptorch.manifolds.base import HyperbolicManifold
 from hyptorch.manifolds.poincare import PoincareBall
-from hyptorch.nn.functional import HyperbolicFunctional
+from hyptorch.nn.functional import compute_hyperbolic_mlr_logits
 from hyptorch.nn.layers import HyperbolicLayer
 from hyptorch.nn.mixins import ParameterInitializationMixin
-from hyptorch.operations.autograd import riemannian_gradient
+from hyptorch.operations.autograd import apply_riemannian_gradient
 
 
 class HyperbolicMLR(HyperbolicLayer, ParameterInitializationMixin):
@@ -23,7 +23,6 @@ class HyperbolicMLR(HyperbolicLayer, ParameterInitializationMixin):
 
         self.a_vals = nn.Parameter(torch.empty(n_classes, ball_dim))
         self.p_vals = nn.Parameter(torch.empty(n_classes, ball_dim))
-        self._functional = HyperbolicFunctional(manifold)
 
         self._init_parameters()
 
@@ -34,17 +33,15 @@ class HyperbolicMLR(HyperbolicLayer, ParameterInitializationMixin):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.manifold.project(x)
 
-        # Map points to Poincare ball
-        p_vals_on_manifold = self.manifold.exponential_map_at_zero(self.p_vals)
+        # Map parameters to the manifold
+        p_vals_on_manifold = self.manifold.exponential_map_at_origin(self.p_vals)
 
-        # Calculate conformal factor
+        # Calculate conformal factor for scaling weights
         conformal_factor = 1 - self.manifold.curvature * p_vals_on_manifold.pow(2).sum(dim=1, keepdim=True)
-
-        # Apply conformal factor to weights
         a_vals_scaled = self.a_vals * conformal_factor
 
         # Compute hyperbolic softmax (logits)
-        return self._functional.hyperbolic_softmax(x, a_vals_scaled, p_vals_on_manifold)
+        return compute_hyperbolic_mlr_logits(x, a_vals_scaled, p_vals_on_manifold, self.manifold)
 
     def extra_repr(self) -> str:
         return f"ball_dim={self.ball_dim}, n_classes={self.n_classes}"
@@ -59,11 +56,11 @@ class ToPoincare(HyperbolicLayer):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Map input directly to Poincare ball
-        mapped = self.manifold.exponential_map_at_zero(x)
+        mapped = self.manifold.exponential_map_at_origin(x)
         projected = self.manifold.project(mapped)
 
         # Apply Riemannian gradient fix
-        return riemannian_gradient(projected, self.manifold.curvature)
+        return apply_riemannian_gradient(projected, self.manifold.curvature)
 
 
 class FromPoincare(HyperbolicLayer):
@@ -75,4 +72,4 @@ class FromPoincare(HyperbolicLayer):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.manifold.project(x)
-        return self.manifold.logarithmic_map_at_zero(x)
+        return self.manifold.logarithmic_map_at_origin(x)

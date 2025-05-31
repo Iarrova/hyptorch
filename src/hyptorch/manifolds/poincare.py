@@ -45,10 +45,9 @@ class PoincareBall(HyperbolicManifold):
         torch.Tensor
             A projected point lying strictly within the Poincaré ball.
         """
-        c = self.curvature
-        r_max = (NumericalConstants.MAX_NORM_SCALE) / torch.sqrt(c)
+        max_radius = NumericalConstants.MAX_NORM_SCALE / torch.sqrt(self.curvature)
         x_norm = norm(x, safe=True)
-        return torch.where(x_norm > r_max, x / x_norm * r_max, x)
+        return torch.where(x_norm > max_radius, x / x_norm * max_radius, x)
 
     def exponential_map(self, x: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
         """
@@ -86,11 +85,10 @@ class PoincareBall(HyperbolicManifold):
         v_norm = norm(v, safe=True)
         lambda_x = self.conformal_factor(x)
         scaled_v = torch.tanh(sqrt_c * lambda_x * v_norm / 2) * v / (sqrt_c * v_norm)
-        return self.add(x, scaled_v)
+        return self.mobius_add(x, scaled_v)
 
-    def exponential_map_at_zero(self, v: torch.Tensor) -> torch.Tensor:
-        c = self.curvature
-        sqrt_c = torch.sqrt(c)
+    def exponential_map_at_origin(self, v: torch.Tensor) -> torch.Tensor:
+        sqrt_c = torch.sqrt(self.curvature)
         v_norm = norm(v, safe=True)
         return torch.tanh(sqrt_c * v_norm) * v / (sqrt_c * v_norm)
 
@@ -131,15 +129,14 @@ class PoincareBall(HyperbolicManifold):
             Tangent vector at `x` pointing toward `y`, representing the geodesic direction and magnitude.
         """
         sqrt_c = torch.sqrt(self.curvature)
-        xy = self.add(-x, y)
+        xy = self.mobius_add(-x, y)
         xy_norm = norm(xy)
         lambda_x = self.conformal_factor(x)
 
         return 2 / (sqrt_c * lambda_x) * torch.atanh(sqrt_c * xy_norm) * xy / xy_norm
 
-    def logarithmic_map_at_zero(self, x: torch.Tensor) -> torch.Tensor:
-        c = self.curvature
-        sqrt_c = torch.sqrt(c)
+    def logarithmic_map_at_origin(self, x: torch.Tensor) -> torch.Tensor:
+        sqrt_c = torch.sqrt(self.curvature)
         x_norm = norm(x, safe=True)
         return x / x_norm / sqrt_c * torch.atanh(sqrt_c * x_norm)
 
@@ -166,11 +163,10 @@ class PoincareBall(HyperbolicManifold):
         torch.Tensor
             Geodesic distance between x and y.
         """
-        c = self.curvature
-        sqrt_c = torch.sqrt(c)
-        return 2 / sqrt_c * torch.atanh(sqrt_c * norm(self.add(-x, y)))
+        sqrt_c = torch.sqrt(self.curvature)
+        return 2 / sqrt_c * torch.atanh(sqrt_c * norm(self.mobius_add(-x, y)))
 
-    def add(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def mobius_add(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         """
         Mobius addition in hyperbolic space.
 
@@ -203,7 +199,7 @@ class PoincareBall(HyperbolicManifold):
 
         return num / (denom + NumericalConstants.EPS)
 
-    def matrix_vector_multiplication(self, matrix: torch.Tensor, vector: torch.Tensor) -> torch.Tensor:
+    def mobius_matvec(self, matrix: torch.Tensor, vector: torch.Tensor) -> torch.Tensor:
         """
         Generalized matrix-vector multiplication in hyperbolic space.
 
@@ -228,8 +224,7 @@ class PoincareBall(HyperbolicManifold):
         torch.Tensor
             Result of the Möbius matrix-vector multiplication.
         """
-        c = self.curvature
-        sqrt_c = torch.sqrt(c)
+        sqrt_c = torch.sqrt(self.curvature)
 
         vector_norm = norm(vector, safe=True)
         mx = vector @ matrix.transpose(-1, -2)
@@ -272,5 +267,4 @@ class PoincareBall(HyperbolicManifold):
         torch.Tensor
             The conformal factor at the input point.
         """
-        c = self.curvature
-        return 2 / (1 - c * squared_norm(x))
+        return 2 / (1 - self.curvature * squared_norm(x))

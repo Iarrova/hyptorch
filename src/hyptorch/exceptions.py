@@ -4,12 +4,6 @@ class HyperbolicError(Exception):
     pass
 
 
-class ValidationError(HyperbolicError):
-    """Raised when validation fails."""
-
-    pass
-
-
 class ManifoldError(HyperbolicError):
     """Raised for manifold-specific errors."""
 

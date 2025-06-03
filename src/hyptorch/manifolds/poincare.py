@@ -1,11 +1,11 @@
 import torch
 
 from hyptorch.config import NumericalConstants
-from hyptorch.manifolds.base import HyperbolicManifold
+from hyptorch.manifolds.base import MobiusManifold
 from hyptorch.operations.tensor import dot_product, norm, squared_norm
 
 
-class PoincareBall(HyperbolicManifold):
+class PoincareBall(MobiusManifold):
     def __init__(self, curvature: float = 1.0):
         super().__init__(curvature)
 

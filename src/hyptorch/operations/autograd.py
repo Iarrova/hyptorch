@@ -15,5 +15,5 @@ class RiemannianGradient(torch.autograd.Function):
         return grad_output * scale, None
 
 
-def apply_riemannian_gradient(x: torch.Tensor, curvature: torch.Tensor):
+def apply_riemannian_gradient(x: torch.Tensor, curvature: torch.Tensor) -> torch.Tensor:
     return RiemannianGradient.apply(x, curvature)

@@ -4,5 +4,6 @@ API Reference
 .. toctree::
    :maxdepth: 2
 
+   manifolds
    nn
-   pmath
+   operations

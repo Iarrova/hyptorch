@@ -65,7 +65,7 @@ class HyperbolicMLR(HyperbolicLayer, ParameterInitializationMixin):
     compute_hyperbolic_mlr_logits : Function that computes the hyperbolic logits
     """
 
-    def __init__(self, ball_dim: int, n_classes: int, manifold: Optional[MobiusManifold] = None):
+    def __init__(self, ball_dim: int, n_classes: int, manifold: Optional[PoincareBall] = None):
         if manifold is None:
             manifold = PoincareBall()
 

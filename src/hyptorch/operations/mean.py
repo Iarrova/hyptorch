@@ -2,6 +2,7 @@ from typing import Optional
 
 import torch
 
+from hyptorch.manifolds.base import MobiusManifold
 from hyptorch.manifolds.poincare import PoincareBall
 from hyptorch.manifolds.transformations import KleinToPoincareTransform, PoincareToKleinTransform
 from hyptorch.operations.tensor import squared_norm
@@ -19,7 +20,7 @@ class HyperbolicMean:
 
     Attributes
     ----------
-    manifold : PoincareBall
+    manifold : MobiusManifold
         The hyperbolic manifold (must be PoincareBall).
     curvature : torch.Tensor
         The curvature parameter of the manifold.
@@ -43,7 +44,7 @@ class HyperbolicMean:
     distortion, giving more weight to points closer to the origin.
     """
 
-    def __init__(self, manifold: Optional[PoincareBall] = None):
+    def __init__(self, manifold: Optional[MobiusManifold] = None):
         if manifold is None:
             manifold = PoincareBall()
 

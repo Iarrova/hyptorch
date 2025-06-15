@@ -8,5 +8,5 @@ class NumericalConstants:
 
     MIN_NORM_THRESHOLD: ClassVar[Final[float]] = EPS
 
-    PROJECTION_EPS: ClassVar[Final[float]] = 1e-3
+    PROJECTION_EPS: ClassVar[Final[float]] = 1e-2
     MAX_NORM_SCALE: ClassVar[Final[float]] = 1 - PROJECTION_EPS

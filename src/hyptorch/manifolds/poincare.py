@@ -371,16 +371,26 @@ class PoincareBall(MobiusManifold):
 
         vector_norm = norm(vector, safe=True)
         mx = vector @ matrix.transpose(-1, -2)
-        mx_norm = norm(mx)
+        mx_norm = norm(mx, safe=True)
 
+        # Clamp vector_norm to prevent atanh from receiving values >= 1
+        vector_norm_clamped = torch.clamp(vector_norm, max=(1.0 - NumericalConstants.EPS) / sqrt_c)
+        atanh_input = sqrt_c * vector_norm_clamped
+        atanh_input = torch.clamp(atanh_input, max=1.0 - NumericalConstants.EPS)
+        
+        # Check for numerical edge cases
+        is_small_vector = vector_norm < NumericalConstants.MIN_NORM_THRESHOLD
+        is_small_mx = mx_norm < NumericalConstants.MIN_NORM_THRESHOLD
+        
         res_c = (
             (1 / sqrt_c)
-            * torch.tanh(mx_norm / vector_norm * torch.atanh(sqrt_c * vector_norm))
+            * torch.tanh(mx_norm / vector_norm_clamped * torch.atanh(atanh_input))
             * (mx / mx_norm)
         )
 
-        cond = (mx == 0).prod(-1, keepdim=True, dtype=torch.uint8)
-        res_0 = torch.zeros(1, dtype=res_c.dtype, device=res_c.device)
+        # Handle edge cases
+        cond = is_small_mx | is_small_vector
+        res_0 = torch.zeros_like(res_c)
         res = torch.where(cond, res_0, res_c)
 
         return self.project(res)

@@ -1,8 +1,8 @@
 import torch
 
-from hyptorch.config import NumericalConstants
+from hyptorch._config import NumericalConstants
 from hyptorch.models.base import HyperbolicMobiusModel
-from hyptorch.operations.tensor import atanh, dot_product, norm, squared_norm, tanh
+from hyptorch.tensor import atanh, dot_product, norm, squared_norm, tanh
 
 
 class PoincareBall(HyperbolicMobiusModel):

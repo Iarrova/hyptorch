@@ -1,9 +1,9 @@
 import torch
 
-from hyptorch.config import NumericalConstants
+from hyptorch._config import NumericalConstants
+from hyptorch.models import PoincareBall
 from hyptorch.models.base import HyperbolicMobiusModel
-from hyptorch.models.poincare_ball import PoincareBall
-from hyptorch.operations.tensor import squared_norm
+from hyptorch.tensor import squared_norm
 
 
 def _batch_mobius_add(x: torch.Tensor, y: torch.Tensor, c: torch.Tensor) -> torch.Tensor:

@@ -1,18 +1,18 @@
-Models
+Geometry
 =========
 
-Base
+Mean
 ------------
 
-.. automodule:: hyptorch.models.base
+.. automodule:: hyptorch.geometry.mean
    :members:
    :undoc-members:
    :show-inheritance:
 
-Poincaré
+Transformations
 ------------
 
-.. automodule:: hyptorch.models.poincare
+.. automodule:: hyptorch.geometry.transforms
    :members:
    :undoc-members:
    :show-inheritance:

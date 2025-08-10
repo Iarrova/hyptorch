@@ -17,14 +17,6 @@ Layers
    :undoc-members:
    :show-inheritance:
 
-Mixins
-------------
-
-.. automodule:: hyptorch.nn.mixins
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Modules
 ------------
 .. automodule:: hyptorch.nn.modules

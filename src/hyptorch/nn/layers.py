@@ -3,9 +3,9 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
+from hyptorch.models import PoincareBall
 from hyptorch.models.base import HyperbolicMobiusModel
-from hyptorch.models.poincare_ball import PoincareBall
-from hyptorch.nn.mixins import ParameterInitializationMixin
+from hyptorch.nn._mixins import ParameterInitializationMixin
 
 
 class HyperbolicLayer(nn.Module):

@@ -2,10 +2,10 @@ from typing import Optional
 
 import torch
 
+from hyptorch.geometry import KleinToPoincareTransform, PoincareToKleinTransform
+from hyptorch.models import PoincareBall
 from hyptorch.models.base import HyperbolicMobiusModel
-from hyptorch.models.poincare_ball import PoincareBall
-from hyptorch.models.transformations import KleinToPoincareTransform, PoincareToKleinTransform
-from hyptorch.operations.tensor import squared_norm
+from hyptorch.tensor import squared_norm
 
 
 class HyperbolicMean:

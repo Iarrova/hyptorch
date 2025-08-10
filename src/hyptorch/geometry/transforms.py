@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import torch
 
 from hyptorch.exceptions import ModelError
-from hyptorch.operations.tensor import squared_norm
+from hyptorch.tensor import squared_norm
 
 
 class GeometricTransform(ABC):

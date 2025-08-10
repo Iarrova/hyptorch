@@ -3,12 +3,12 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
+from hyptorch.models import PoincareBall
 from hyptorch.models.base import HyperbolicMobiusModel
-from hyptorch.models.poincare_ball import PoincareBall
+from hyptorch.nn._mixins import ParameterInitializationMixin
 from hyptorch.nn.functional import compute_hyperbolic_mlr_logits
 from hyptorch.nn.layers import HyperbolicLayer
-from hyptorch.nn.mixins import ParameterInitializationMixin
-from hyptorch.operations.autograd import apply_riemannian_gradient
+from hyptorch.tensor import apply_riemannian_gradient
 
 
 class HyperbolicMLR(HyperbolicLayer, ParameterInitializationMixin):

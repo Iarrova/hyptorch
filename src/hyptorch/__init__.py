@@ -1,15 +1,23 @@
+from hyptorch.geometry import HyperbolicMean
 from hyptorch.models import PoincareBall
-from hyptorch.nn.layers import ConcatPoincareLayer, HyperbolicDistanceLayer, HypLinear
-from hyptorch.nn.modules import FromPoincare, HyperbolicMLR, ToPoincare
+from hyptorch.nn import (
+    ConcatPoincareLayer,
+    FromPoincare,
+    HyperbolicDistanceLayer,
+    HyperbolicMLR,
+    HypLinear,
+    ToPoincare,
+)
 
 __version__ = "1.0.0"
 
 __all__ = [
-    "HypLinear",
+    "HyperbolicMean",
+    "PoincareBall",
     "ConcatPoincareLayer",
+    "FromPoincare",
     "HyperbolicDistanceLayer",
     "HyperbolicMLR",
+    "HypLinear",
     "ToPoincare",
-    "FromPoincare",
-    "PoincareBall",
 ]

@@ -1,6 +1,6 @@
 import torch
 
-from hyptorch.config import NumericalConstants
+from hyptorch._config import NumericalConstants
 
 
 def norm(tensor: torch.Tensor, *, safe: bool = False) -> torch.Tensor:

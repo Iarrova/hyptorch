@@ -1,18 +1,18 @@
-Models
+Tensor
 =========
 
-Base
+Autograd
 ------------
 
-.. automodule:: hyptorch.models.base
+.. automodule:: hyptorch.tensor.autograd
    :members:
    :undoc-members:
    :show-inheritance:
 
-Poincaré
+Operations
 ------------
 
-.. automodule:: hyptorch.models.poincare
+.. automodule:: hyptorch.tensor.ops
    :members:
    :undoc-members:
    :show-inheritance:

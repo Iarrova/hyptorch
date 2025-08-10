@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 import torch
 
-from hyptorch.exceptions import ManifoldError
+from hyptorch.exceptions import ModelError
 
 
 class HyperbolicModel(ABC):
@@ -25,7 +25,7 @@ class HyperbolicModel(ABC):
 
     Raises
     ------
-    ManifoldError
+    ModelError
         If curvature is not positive.
 
     Notes
@@ -37,7 +37,7 @@ class HyperbolicModel(ABC):
 
     def __init__(self, curvature: float = 1.0) -> None:
         if curvature <= 0:
-            raise ManifoldError(f"Curvature must be positive, got {curvature}")
+            raise ModelError(f"Curvature must be positive, got {curvature}")
         self._curvature = torch.tensor(curvature, dtype=torch.float32)
 
     @property

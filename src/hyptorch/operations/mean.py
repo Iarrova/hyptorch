@@ -14,21 +14,21 @@ class HyperbolicMean:
 
     Parameters
     ----------
-    manifold : PoincareBall, optional
-        The hyperbolic manifold to use. Currently only supports PoincareBall.
+    model : HyperbolicMobiusModel, optional
+        The hyperbolic model to use. Currently only supports PoincareBall.
         If None, creates a new PoincareBall with default curvature. Default is None.
 
     Attributes
     ----------
-    manifold : MobiusManifold
-        The hyperbolic manifold (must be PoincareBall).
+    model : HyperbolicMobiusModel
+        The hyperbolic model (currently only PoincareBall is supported).
     curvature : torch.Tensor
-        The curvature parameter of the manifold.
+        The curvature parameter of the model.
 
     Raises
     ------
     NotImplementedError
-        If manifold is not an instance of PoincareBall.
+        If model is not an instance of PoincareBall.
 
     Notes
     -----
@@ -38,21 +38,17 @@ class HyperbolicMean:
     2. Compute Lorentz factors for each point in Klein model
     3. Calculate weighted average using Lorentz factors as weights
     4. Transform result back to Poincaré model
-
-    This approach provides a closed-form solution that avoids iterative
-    optimization. The Lorentz factors account for the hyperbolic metric
-    distortion, giving more weight to points closer to the origin.
     """
 
-    def __init__(self, manifold: Optional[HyperbolicMobiusModel] = None):
-        if manifold is None:
-            manifold = PoincareBall()
+    def __init__(self, model: Optional[HyperbolicMobiusModel] = None):
+        if model is None:
+            model = PoincareBall()
 
-        if not isinstance(manifold, PoincareBall):
-            raise NotImplementedError("Hyperbolic mean currently only supports Poincaré ball manifold")
+        if not isinstance(model, PoincareBall):
+            raise NotImplementedError("Hyperbolic mean currently only supports Poincaré ball model")
 
-        self.manifold = manifold
-        self.curvature = manifold.curvature
+        self.model = model
+        self.curvature = model.curvature
 
         # Initialize transformation objects
         self._poincare_to_klein = PoincareToKleinTransform(curvature=self.curvature.item())

@@ -34,6 +34,7 @@ line-length = 110
 
 [dependency-groups]
 dev = [
+    "pyright>=1.1.400",
     "pytest>=8.3.5",
 ]
 

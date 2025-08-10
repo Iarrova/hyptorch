@@ -4,7 +4,7 @@ Manifolds
 Base
 ------------
 
-.. automodule:: hyptorch.manifolds.base
+.. automodule:: hyptorch.models.base
    :members:
    :undoc-members:
    :show-inheritance:
@@ -12,14 +12,14 @@ Base
 Poincaré
 ------------
 
-.. automodule:: hyptorch.manifolds.poincare
+.. automodule:: hyptorch.models.poincare
    :members:
    :undoc-members:
    :show-inheritance:
 
 Transformations
 ------------
-.. automodule:: hyptorch.manifolds.transformations
+.. automodule:: hyptorch.models.transformations
    :members:
    :undoc-members:
    :show-inheritance:

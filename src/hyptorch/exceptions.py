@@ -4,7 +4,7 @@ class HyperbolicError(Exception):
     pass
 
 
-class ManifoldError(HyperbolicError):
-    """Raised for manifold-specific errors."""
+class ModelError(HyperbolicError):
+    """Raised for model-specific errors."""
 
     pass

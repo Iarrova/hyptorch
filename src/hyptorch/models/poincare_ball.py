@@ -2,7 +2,7 @@ import torch
 
 from hyptorch.config import NumericalConstants
 from hyptorch.models.base import HyperbolicMobiusModel
-from hyptorch.operations.tensor import dot_product, norm, squared_norm
+from hyptorch.operations.tensor import atanh, dot_product, norm, squared_norm, tanh
 
 
 class PoincareBall(HyperbolicMobiusModel):
@@ -43,9 +43,8 @@ class PoincareBall(HyperbolicMobiusModel):
             d_c(\\mathbf{x}, \\mathbf{y}) = \\left\\frac{2}{\\sqrt{c}}\\right \\text{arctanh}(\\sqrt{c} \\|-\\mathbf{x} \\oplus_{c} \\mathbf{y}\\|)
         """
         sqrt_c = torch.sqrt(self.curvature)
-        return (2 / sqrt_c) * torch.atanh(sqrt_c * norm(self.mobius_add(-x, y)))
+        return (2 / sqrt_c) * atanh(sqrt_c * norm(self.mobius_add(-x, y)))
 
-    # TODO: Finish docstring
     def project(self, x: torch.Tensor) -> torch.Tensor:
         """
         Project a point to lie strictly within the Poincaré ball.
@@ -65,7 +64,7 @@ class PoincareBall(HyperbolicMobiusModel):
         where:
         - :math:`\\epsilon` is a small constant to ensure the point lies strictly within the ball.
         """
-        max_radius = NumericalConstants.MAX_NORM_SCALE / torch.sqrt(self.curvature)
+        max_radius = NumericalConstants.MAX_NORM / torch.sqrt(self.curvature)
         x_norm = norm(x, safe=True)
         return torch.where(x_norm > max_radius, x / x_norm * max_radius, x)
 
@@ -83,7 +82,7 @@ class PoincareBall(HyperbolicMobiusModel):
         sqrt_c = torch.sqrt(self.curvature)
         v_norm = norm(v, safe=True)
         lambda_x = self.conformal_factor(x)
-        return self.mobius_add(x, torch.tanh(sqrt_c * lambda_x * v_norm / 2) * v / (sqrt_c * v_norm))
+        return self.mobius_add(x, tanh(sqrt_c * lambda_x * v_norm / 2) * v / (sqrt_c * v_norm))
 
     def exponential_map_at_origin(self, v: torch.Tensor) -> torch.Tensor:
         """
@@ -94,7 +93,7 @@ class PoincareBall(HyperbolicMobiusModel):
         """
         sqrt_c = torch.sqrt(self.curvature)
         v_norm = norm(v, safe=True)
-        return torch.tanh(sqrt_c * v_norm) * v / (sqrt_c * v_norm)
+        return tanh(sqrt_c * v_norm) * v / (sqrt_c * v_norm)
 
     def logarithmic_map(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         """
@@ -112,7 +111,7 @@ class PoincareBall(HyperbolicMobiusModel):
         xy = self.mobius_add(-x, y)
         xy_norm = norm(xy, safe=True)
         lambda_x = self.conformal_factor(x)
-        return (2 / (sqrt_c * lambda_x)) * torch.atanh(sqrt_c * xy_norm) * xy / xy_norm
+        return (2 / (sqrt_c * lambda_x)) * atanh(sqrt_c * xy_norm) * xy / xy_norm
 
     def logarithmic_map_at_origin(self, y: torch.Tensor) -> torch.Tensor:
         """
@@ -123,7 +122,7 @@ class PoincareBall(HyperbolicMobiusModel):
         """
         sqrt_c = torch.sqrt(self.curvature)
         y_norm = norm(y, safe=True)
-        return (1 / sqrt_c) * torch.atanh(sqrt_c * y_norm) * (y / y_norm)
+        return (1 / sqrt_c) * atanh(sqrt_c * y_norm) * (y / y_norm)
 
     def mobius_add(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         """
@@ -163,7 +162,7 @@ class PoincareBall(HyperbolicMobiusModel):
         mx = v @ m.transpose(-1, -2)
         mx_norm = norm(mx, safe=True)
 
-        res_c = (1 / sqrt_c) * torch.tanh((mx_norm / v_norm) * torch.atanh(sqrt_c * v_norm)) * (mx / mx_norm)
+        res_c = (1 / sqrt_c) * tanh((mx_norm / v_norm) * atanh(sqrt_c * v_norm)) * (mx / mx_norm)
 
         cond = (mx == 0).prod(-1, keepdim=True, dtype=torch.uint8)
         res_0 = torch.zeros(1, dtype=res_c.dtype, device=res_c.device)

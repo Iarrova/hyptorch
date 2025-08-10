@@ -4,6 +4,6 @@ API Reference
 .. toctree::
    :maxdepth: 2
 
-   manifolds
+   models
    nn
    operations

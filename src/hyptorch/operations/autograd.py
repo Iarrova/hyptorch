@@ -7,14 +7,13 @@ class RiemannianGradient(torch.autograd.Function):
     Custom autograd function for Riemannian gradient computation in hyperbolic space.
 
     This class implements a custom backward pass that scales Euclidean gradients
-    to Riemannian gradients appropriate for optimization on the Poincaré ball
-    manifold. It's essential for correct gradient-based optimization in
-    hyperbolic neural networks.
+    to Riemannian gradients appropriate for optimization on the Poincaré ball model.
+    It's essential for correct gradient-based optimization in hyperbolic neural networks.
 
     Notes
     -----
     In hyperbolic geometry, the metric tensor is different from Euclidean space,
-    requiring gradient scaling to account for the curvature of the manifold.
+    requiring gradient scaling to account for the curvature of the model.
     The Poincaré ball has a conformal metric, meaning the metric tensor is a
     scalar multiple of the identity matrix.
 
@@ -23,8 +22,7 @@ class RiemannianGradient(torch.autograd.Function):
     .. math::
         \\text{scale} = \\frac{(1 - c\\|x\\|^2)^2}{4}
 
-    where c is the curvature. This ensures gradients respect the hyperbolic
-    geometry during backpropagation.
+    This ensures gradients respect the hyperbolic geometry during backpropagation.
 
     This is implemented as a custom autograd function to efficiently handle
     the gradient transformation during the backward pass without affecting

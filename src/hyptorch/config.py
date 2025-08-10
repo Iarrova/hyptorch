@@ -9,4 +9,9 @@ class NumericalConstants:
     MIN_NORM_THRESHOLD: ClassVar[Final[float]] = EPS
 
     PROJECTION_EPS: ClassVar[Final[float]] = 1e-3
-    MAX_NORM_SCALE: ClassVar[Final[float]] = 1 - PROJECTION_EPS
+    MAX_NORM: ClassVar[Final[float]] = 1 - PROJECTION_EPS
+
+    TANH_CLAMP_MIN: ClassVar[Final[float]] = -15.0
+    TANH_CLAMP_MAX: ClassVar[Final[float]] = 15.0
+    ATANH_CLAMP_MIN: ClassVar[Final[float]] = -1 + EPS
+    ATANH_CLAMP_MAX: ClassVar[Final[float]] = 1 - EPS

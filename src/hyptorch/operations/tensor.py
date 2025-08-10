@@ -61,10 +61,8 @@ def dot_product(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
 
     Parameters
     ----------
-    x : torch.Tensor
-        First input tensor.
-    y : torch.Tensor
-        Second input tensor. Must have the same shape as x.
+    x, y : torch.Tensor
+        Input tensors. Must have the same shape.
 
     Returns
     -------
@@ -73,3 +71,45 @@ def dot_product(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         The last dimension is kept for broadcasting compatibility.
     """
     return torch.sum(x * y, dim=-1, keepdim=True)
+
+
+def tanh(x: torch.Tensor) -> torch.Tensor:
+    """
+    Compute the hyperbolic tangent of a tensor element-wise.
+
+    This function is a wrapper around torch.tanh to ensure numerical stability.
+
+    Parameters
+    ----------
+    x : torch.Tensor
+        Input tensor.
+
+    Returns
+    -------
+    torch.Tensor
+        Element-wise hyperbolic tangent of the input tensor.
+    """
+    return torch.tanh(
+        torch.clamp(x, min=NumericalConstants.TANH_CLAMP_MIN, max=NumericalConstants.TANH_CLAMP_MAX)
+    )
+
+
+def atanh(x: torch.Tensor) -> torch.Tensor:
+    """
+    Compute the inverse hyperbolic tangent of a tensor element-wise.
+
+    This function is a wrapper around torch.atanh to ensure numerical stability.
+
+    Parameters
+    ----------
+    x : torch.Tensor
+        Input tensor.
+
+    Returns
+    -------
+    torch.Tensor
+        Element-wise inverse hyperbolic tangent of the input tensor.
+    """
+    return torch.atanh(
+        torch.clamp(x, min=NumericalConstants.ATANH_CLAMP_MIN, max=NumericalConstants.ATANH_CLAMP_MAX)
+    )

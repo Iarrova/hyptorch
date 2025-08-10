@@ -3,8 +3,8 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from hyptorch.manifolds.base import MobiusManifold
-from hyptorch.manifolds.poincare import PoincareBall
+from hyptorch.models.base import HyperbolicMobiusModel
+from hyptorch.models.poincare_ball import PoincareBall
 from hyptorch.nn.mixins import ParameterInitializationMixin
 
 
@@ -34,7 +34,7 @@ class HyperbolicLayer(nn.Module):
     consistent handling of the manifold and its properties.
     """
 
-    def __init__(self, manifold: MobiusManifold):
+    def __init__(self, manifold: HyperbolicMobiusModel):
         super().__init__()
         self.manifold = manifold
 
@@ -112,7 +112,7 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
         self,
         in_features: int,
         out_features: int,
-        manifold: Optional[MobiusManifold] = None,
+        manifold: Optional[HyperbolicMobiusModel] = None,
         bias: bool = True,
     ):
         if manifold is None:
@@ -225,7 +225,7 @@ class ConcatPoincareLayer(HyperbolicLayer):
     HypLinear : Hyperbolic linear layer used for transformations
     """
 
-    def __init__(self, d1: int, d2: int, d_out: int, manifold: Optional[MobiusManifold] = None):
+    def __init__(self, d1: int, d2: int, d_out: int, manifold: Optional[HyperbolicMobiusModel] = None):
         if manifold is None:
             manifold = PoincareBall()
 
@@ -297,7 +297,7 @@ class HyperbolicDistanceLayer(HyperbolicLayer):
     PoincareBall.distance : The underlying distance computation
     """
 
-    def __init__(self, manifold: Optional[MobiusManifold] = None):
+    def __init__(self, manifold: Optional[HyperbolicMobiusModel] = None):
         if manifold is None:
             manifold = PoincareBall()
 

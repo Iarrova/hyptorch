@@ -1,4 +1,4 @@
-from hyptorch.manifolds import PoincareBall
+from hyptorch.models import PoincareBall
 from hyptorch.nn.layers import ConcatPoincareLayer, HyperbolicDistanceLayer, HypLinear
 from hyptorch.nn.modules import FromPoincare, HyperbolicMLR, ToPoincare
 

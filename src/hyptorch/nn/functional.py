@@ -1,8 +1,8 @@
 import torch
 
 from hyptorch.config import NumericalConstants
-from hyptorch.manifolds.base import MobiusManifold
-from hyptorch.manifolds.poincare import PoincareBall
+from hyptorch.models.base import HyperbolicMobiusModel
+from hyptorch.models.poincare_ball import PoincareBall
 from hyptorch.operations.tensor import squared_norm
 
 
@@ -62,7 +62,7 @@ def _batch_mobius_add(x: torch.Tensor, y: torch.Tensor, c: torch.Tensor) -> torc
 
 
 def compute_hyperbolic_mlr_logits(
-    x: torch.Tensor, weights: torch.Tensor, points: torch.Tensor, manifold: MobiusManifold
+    x: torch.Tensor, weights: torch.Tensor, points: torch.Tensor, manifold: HyperbolicMobiusModel
 ) -> torch.Tensor:
     """
     Compute logits for hyperbolic multinomial logistic regression (MLR).

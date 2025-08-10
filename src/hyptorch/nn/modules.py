@@ -3,8 +3,8 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from hyptorch.manifolds.base import MobiusManifold
-from hyptorch.manifolds.poincare import PoincareBall
+from hyptorch.models.base import HyperbolicMobiusModel
+from hyptorch.models.poincare_ball import PoincareBall
 from hyptorch.nn.functional import compute_hyperbolic_mlr_logits
 from hyptorch.nn.layers import HyperbolicLayer
 from hyptorch.nn.mixins import ParameterInitializationMixin
@@ -176,7 +176,7 @@ class ToPoincare(HyperbolicLayer):
 
     # TODO: Maybe add apply_riemannian_gradient to See Also section
 
-    def __init__(self, manifold: Optional[MobiusManifold] = None):
+    def __init__(self, manifold: Optional[HyperbolicMobiusModel] = None):
         if manifold is None:
             manifold = PoincareBall()
 
@@ -252,7 +252,7 @@ class FromPoincare(HyperbolicLayer):
     PoincareBall.logarithmic_map_at_origin : The underlying mapping function
     """
 
-    def __init__(self, manifold: Optional[MobiusManifold] = None):
+    def __init__(self, manifold: Optional[HyperbolicMobiusModel] = None):
         if manifold is None:
             manifold = PoincareBall()
 

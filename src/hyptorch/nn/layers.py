@@ -6,49 +6,8 @@ import torch.nn as nn
 from hyptorch.models import PoincareBall
 from hyptorch.models.base import HyperbolicMobiusModel
 from hyptorch.nn._mixins import ParameterInitializationMixin
-
-
-class HyperbolicLayer(nn.Module):
-    """
-    Base class for hyperbolic neural network layers.
-
-    This abstract class provides a foundation for all hyperbolic layers,
-    maintaining a reference to the underlying hyperbolic manifold and
-    providing convenient access to its curvature.
-
-    Parameters
-    ----------
-    manifold : HyperbolicManifold
-        The hyperbolic manifold on which the layer operates.
-
-    Attributes
-    ----------
-    manifold : HyperbolicManifold
-        The hyperbolic manifold instance.
-    curvature : torch.Tensor
-        The curvature of the manifold (accessible via property).
-
-    Notes
-    -----
-    All hyperbolic layers should inherit from this base class to ensure
-    consistent handling of the manifold and its properties.
-    """
-
-    def __init__(self, manifold: HyperbolicMobiusModel):
-        super().__init__()
-        self.manifold = manifold
-
-    @property
-    def curvature(self) -> torch.Tensor:
-        """
-        Get the curvature of the layer's manifold.
-
-        Returns
-        -------
-        torch.Tensor
-            The curvature parameter of the manifold.
-        """
-        return self.manifold.curvature
+from hyptorch.nn.base import HyperbolicLayer
+from hyptorch.tensor import apply_riemannian_gradient
 
 
 class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
@@ -168,133 +127,53 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
         return f"in_features={self.in_features}, out_features={self.out_features}, bias={self.use_bias}"
 
 
-class ConcatPoincareLayer(HyperbolicLayer):
+class ToPoincare(HyperbolicLayer):
     """
-    Hyperbolic concatenation layer for the Poincaré ball.
+    Layer that maps Euclidean points to the Poincaré ball.
 
-    This layer concatenates two hyperbolic embeddings by applying separate
-    linear transformations and combining them with Möbius addition. This is
-    useful for combining features from different sources in hyperbolic space.
-
-    Parameters
-    ----------
-    d1 : int
-        Dimension of the first input.
-    d2 : int
-        Dimension of the second input.
-    d_out : int
-        Dimension of the output.
-    manifold : MobiusManifold, optional
-        The Poincaré ball manifold to use. If None, creates a new PoincareBall
-        with default curvature. Default is None.
-
-    Attributes
-    ----------
-    d1 : int
-        First input dimension.
-    d2 : int
-        Second input dimension.
-    d_out : int
-        Output dimension.
-    layer1 : HypLinear
-        Linear transformation for first input.
-    layer2 : HypLinear
-        Linear transformation for second input.
-
-    Notes
-    -----
-    The concatenation operation in hyperbolic space is performed as:
-
-    .. math::
-        \\text{concat}(x_1, x_2) = (W_1 \\otimes_c x_1) \\oplus_c (W_2 \\otimes_c x_2)
-
-    where :math:`\\otimes_c` is Möbius matrix multiplication and :math:`\\oplus_c`
-    is Möbius addition. This preserves the hyperbolic structure while combining
-    information from both inputs.
-
-    Examples
-    --------
-    >>> manifold = PoincareBall()
-    >>> concat_layer = ConcatPoincareLayer(5, 3, 8, manifold)
-    >>> x1 = torch.randn(32, 5) * 0.1
-    >>> x2 = torch.randn(32, 3) * 0.1
-    >>> output = concat_layer(x1, x2)  # Shape: (32, 8)
-
-    See Also
-    --------
-    HypLinear : Hyperbolic linear layer used for transformations
-    """
-
-    def __init__(self, d1: int, d2: int, d_out: int, manifold: Optional[HyperbolicMobiusModel] = None):
-        if manifold is None:
-            manifold = PoincareBall()
-
-        super().__init__(manifold)
-
-        self.d1 = d1
-        self.d2 = d2
-        self.d_out = d_out
-
-        self.layer1 = HypLinear(d1, d_out, manifold=manifold, bias=False)
-        self.layer2 = HypLinear(d2, d_out, manifold=manifold, bias=False)
-
-    def forward(self, x1: torch.Tensor, x2: torch.Tensor) -> torch.Tensor:
-        """
-        Concatenate two inputs in hyperbolic space.
-
-        Parameters
-        ----------
-        x1 : torch.Tensor
-            First input on the manifold. Shape (..., d1).
-        x2 : torch.Tensor
-            Second input on the manifold. Shape (..., d2).
-
-        Returns
-        -------
-        torch.Tensor
-            Concatenated output on the manifold. Shape (..., d_out).
-        """
-        out1 = self.layer1(x1)
-        out2 = self.layer2(x2)
-
-        return self.manifold.mobius_add(out1, out2)
-
-    def extra_repr(self) -> str:
-        return f"d1={self.d1}, d2={self.d2}, d_out={self.d_out}"
-
-
-class HyperbolicDistanceLayer(HyperbolicLayer):
-    """
-    Layer for computing pairwise hyperbolic distances.
-
-    This layer computes the geodesic distance between pairs of points
-    on a hyperbolic manifold. It can be used as a similarity measure
-    or as part of distance-based models.
+    This module provides a differentiable mapping from Euclidean space to
+    hyperbolic space, using the exponential map at the origin. It also
+    applies a Riemannian gradient correction to ensure proper gradient
+    flow in the hyperbolic space.
 
     Parameters
     ----------
     manifold : MobiusManifold, optional
-        The Poincaré ball manifold to use. If None, creates a new PoincareBall
+        The hyperbolic manifold to use. If None, creates a new PoincareBall
         with default curvature. Default is None.
 
     Notes
     -----
-    The layer is useful for tasks that require measuring distances such as:
-    - Similarity computation in hyperbolic embeddings
-    - Distance-based classification or clustering
-    - Metric learning in hyperbolic space
+    The mapping is performed via:
+
+    1. Exponential map at origin: Maps Euclidean vectors to the Poincaré ball
+    2. Projection: Ensures numerical stability by keeping points within bounds
+    3. Riemannian gradient: Applies gradient scaling for proper optimization
+
+    The Riemannian gradient correction is crucial for optimization as it
+    accounts for the distortion of the hyperbolic metric, scaling gradients
+    by :math:`\\frac{(1 - c\\|x\\|^2)^2}{4}`.
 
     Examples
     --------
-    >>> manifold = PoincareBall()
-    >>> dist_layer = HyperbolicDistanceLayer(manifold)
-    >>> x1 = torch.randn(32, 10) * 0.3
-    >>> x2 = torch.randn(32, 10) * 0.3
-    >>> distances = dist_layer(x1, x2)  # Shape: (32,)
+    >>> # Map Euclidean embeddings to hyperbolic space
+    >>> to_poincare = ToPoincare()
+    >>> euclidean_features = torch.randn(32, 10)  # Euclidean vectors
+    >>> hyperbolic_features = to_poincare(euclidean_features)
+    >>> # hyperbolic_features are now on the Poincaré ball
+
+    >>> # Use in a neural network
+    >>> model = nn.Sequential(
+    ...     nn.Linear(20, 10),
+    ...     nn.ReLU(),
+    ...     ToPoincare(),  # Map to hyperbolic space
+    ...     HypLinear(10, 5)  # Process in hyperbolic space
+    ... )
 
     See Also
     --------
-    PoincareBall.distance : The underlying distance computation
+    FromPoincare : Inverse operation mapping from Poincaré ball to Euclidean
+    PoincareBall.exponential_map_at_origin : The underlying mapping function
     """
 
     def __init__(self, manifold: Optional[HyperbolicMobiusModel] = None):
@@ -303,21 +182,95 @@ class HyperbolicDistanceLayer(HyperbolicLayer):
 
         super().__init__(manifold)
 
-    def forward(self, x1: torch.Tensor, x2: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Compute hyperbolic distance between pairs of points.
+        Map Euclidean points to the Poincaré ball.
 
         Parameters
         ----------
-        x1 : torch.Tensor
-            First set of points on the manifold. Shape (..., dim).
-        x2 : torch.Tensor
-            Second set of points on the manifold. Shape (..., dim).
+        x : torch.Tensor
+            Input points in Euclidean space. Shape (..., dim).
 
         Returns
         -------
         torch.Tensor
-            Pairwise distances. Shape (...,), where the output shape
-            is the broadcast-compatible shape of the input batch dimensions.
+            Points on the Poincaré ball with Riemannian gradient correction.
+            Shape (..., dim).
         """
-        return self.manifold.distance(x1, x2)
+        mapped = self.manifold.exponential_map_at_origin(x)
+        projected = self.manifold.project(mapped)
+
+        return apply_riemannian_gradient(projected, self.manifold.curvature)
+
+
+class FromPoincare(HyperbolicLayer):
+    """
+    Layer that maps points from the Poincaré ball to Euclidean space.
+
+    This module provides a differentiable mapping from hyperbolic space back
+    to Euclidean space using the logarithmic map at the origin. This is useful
+    for extracting features from hyperbolic representations for use in
+    Euclidean layers.
+
+    Parameters
+    ----------
+    manifold : MobiusManifold, optional
+        The hyperbolic manifold to use. If None, creates a new PoincareBall
+        with default curvature. Default is None.
+
+    Notes
+    -----
+    The mapping uses the logarithmic map at the origin, which is the inverse
+    of the exponential map. For a point :math:`x` on the Poincaré ball, it computes
+    the tangent vector at the origin that would map to :math:`x` under the exponential
+    map.
+
+    This layer is useful when:
+    - Transitioning from hyperbolic to Euclidean processing
+    - Extracting hyperbolic features for Euclidean classifiers
+    - Creating hybrid architectures with both geometries
+
+    Examples
+    --------
+    >>> # Extract Euclidean features from hyperbolic embeddings
+    >>> from_poincare = FromPoincare()
+    >>> hyperbolic_points = torch.randn(32, 10) * 0.3
+    >>> hyperbolic_points = PoincareBall().project(hyperbolic_points)
+    >>> euclidean_features = from_poincare(hyperbolic_points)
+
+    >>> # Hybrid architecture
+    >>> model = nn.Sequential(
+    ...     HypLinear(10, 8),  # Process in hyperbolic space
+    ...     FromPoincare(),    # Convert to Euclidean
+    ...     nn.Linear(8, 5),   # Process in Euclidean space
+    ...     nn.Softmax(dim=1)
+    ... )
+
+    See Also
+    --------
+    ToPoincare : Inverse operation mapping from Euclidean to Poincaré ball
+    PoincareBall.logarithmic_map_at_origin : The underlying mapping function
+    """
+
+    def __init__(self, manifold: Optional[HyperbolicMobiusModel] = None):
+        if manifold is None:
+            manifold = PoincareBall()
+
+        super().__init__(manifold)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Map points from the Poincaré ball to Euclidean space.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input points on the Poincaré ball. Shape (..., dim).
+
+        Returns
+        -------
+        torch.Tensor
+            Points in Euclidean space (tangent space at origin). Shape (..., dim).
+        """
+        x = self.manifold.project(x)
+        return self.manifold.logarithmic_map_at_origin(x)

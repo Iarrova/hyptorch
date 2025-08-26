@@ -1,11 +1,9 @@
 from hyptorch.nn import functional
-from hyptorch.nn.layers import ConcatPoincareLayer, HyperbolicDistanceLayer, HypLinear
-from hyptorch.nn.modules import FromPoincare, HyperbolicMLR, ToPoincare
+from hyptorch.nn.layers import FromPoincare, HypLinear, ToPoincare
+from hyptorch.nn.modules import HyperbolicMLR
 
 __all__ = [
     "HypLinear",
-    "ConcatPoincareLayer",
-    "HyperbolicDistanceLayer",
     "HyperbolicMLR",
     "ToPoincare",
     "FromPoincare",

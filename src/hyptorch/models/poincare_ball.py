@@ -61,8 +61,7 @@ class PoincareBall(HyperbolicMobiusModel):
             \\end{cases}
             \\quad \\text{where} \\quad r_{\\text{max}} = \\frac{1 - \\epsilon}{\\sqrt{c}}
             
-        where:
-        - :math:`\\epsilon` is a small constant to ensure the point lies strictly within the ball.
+        where :math:`\\epsilon` is a small constant to ensure the point lies strictly within the ball.
         """
         max_radius = NumericalConstants.MAX_NORM / torch.sqrt(self.curvature)
         x_norm = norm(x, safe=True)
@@ -130,12 +129,6 @@ class PoincareBall(HyperbolicMobiusModel):
 
         .. math::
             \\mathbf{x} \\oplus_{c} \\mathbf{y} = \\frac{(1 + 2c \\langle \\mathbf{x}, \\mathbf{y} \\rangle + c \\|\\mathbf{y}\\|^2) \\mathbf{x} + (1 - c \\|\\mathbf{x}\\|^2) \\mathbf{y}}{1 + 2c \\langle \\mathbf{x}, \\mathbf{y} \\rangle + c^2 \\|\\mathbf{x}\\|^2 \\|\\mathbf{y}\\|^2}
-
-        Properties:
-        - Identity: :math:`x \\oplus 0 = x`
-        - Inverse: :math:`x \\oplus (-x) = 0`
-        - Left cancellation: :math:`(-x) \\oplus_c (x \\oplus_c y) = y`
-        - Non-commutative: :math:`x \\oplus y \\neq y \\oplus x` (in general)
         """
         c = self.curvature
         x2 = squared_norm(x)

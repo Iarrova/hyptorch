@@ -106,16 +106,16 @@ class HyperbolicModel(ABC):
         """
         Compute the exponential map from a point in a given direction.
 
-        The exponential map takes a point in the model and a tangent vector
-        at that point, and returns the point reached by following the geodesic
-        in that direction for unit time.
+        The exponential map serves as a bridge between the tangent space (Euclidean space)
+        and the manifold (Hyperbolic space). Essentially, it converts Euclidean features to
+        Hyperbolic embeddings.
 
         Parameters
         ----------
         x : torch.Tensor
             Base point in the model's coordinate system.
         v : torch.Tensor
-            Tangent vector at x.
+            Tangent vector at x (the Euclidean embedding).
 
         Returns
         -------
@@ -140,7 +140,7 @@ class HyperbolicModel(ABC):
         Parameters
         ----------
         v : torch.Tensor
-            Tangent vector at the origin.
+            Tangent vector at the origin (the Euclidean embedding).
 
         Returns
         -------
@@ -159,9 +159,9 @@ class HyperbolicModel(ABC):
         """
         Compute the logarithmic map between two points.
 
-        The logarithmic map finds the initial velocity of the geodesic
-        starting at x that reaches y in unit time, expressed as a tangent
-        vector in the model's coordinate system.
+        The logarithmic map serves as a bridge between the manifold (Hyperbolic space)
+        and the tangent space (Euclidean space). Essentially, it extracts Hyperbolic features to
+        Euclidean embeddings.
 
         Parameters
         ----------

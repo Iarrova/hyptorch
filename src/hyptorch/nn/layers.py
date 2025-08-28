@@ -1,9 +1,6 @@
-from typing import Optional
-
 import torch
 import torch.nn as nn
 
-from hyptorch.models import PoincareBall
 from hyptorch.models.base import HyperbolicMobiusModel
 from hyptorch.nn._mixins import ParameterInitializationMixin
 from hyptorch.nn.base import HyperbolicLayer
@@ -24,9 +21,8 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
         Size of each input sample.
     out_features : int
         Size of each output sample.
-    manifold : MobiusManifold, optional
-        The Poincaré ball manifold to use. If None, creates a new PoincareBall
-        with default curvature. Default is None.
+    model : HyperbolicMobiusModel
+        The model that represents hyperbolic space to use.
     bias : bool, optional
         If True, adds a learnable bias to the output. Default is True.
 
@@ -56,8 +52,8 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
 
     Examples
     --------
-    >>> manifold = PoincareBall(curvature=1.0)
-    >>> layer = HypLinear(10, 5, manifold=manifold)
+    >>> model = PoincareBall(curvature=1.0)
+    >>> layer = HypLinear(10, 5, model=model)
     >>> x = torch.randn(32, 10) * 0.1  # Batch of 32 samples
     >>> y = layer(x)  # Output shape: (32, 5)
 
@@ -71,13 +67,13 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
         self,
         in_features: int,
         out_features: int,
-        manifold: Optional[HyperbolicMobiusModel] = None,
+        model: HyperbolicMobiusModel,
         bias: bool = True,
     ):
-        if manifold is None:
-            manifold = PoincareBall()
+        if model is None:
+            raise ValueError("A hyperbolic model must be provided.")
 
-        super().__init__(manifold)
+        super().__init__(model)
 
         self.in_features = in_features
         self.out_features = out_features
@@ -107,21 +103,21 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
         Parameters
         ----------
         x : torch.Tensor
-            Input tensor of points on the manifold. Shape (..., in_features).
+            Input tensor of points on the model. Shape (..., in_features).
 
         Returns
         -------
         torch.Tensor
-            Transformed points on the manifold. Shape (..., out_features).
+            Transformed points on the model. Shape (..., out_features).
         """
-        x = self.manifold.project(x)
-        output = self.manifold.mobius_matvec(self.weight, x)
+        projected = self.model.project(x)
 
+        output = self.model.mobius_matvec(self.weight, projected)
         if self.bias is not None:
-            bias_on_manifold = self.manifold.exponential_map_at_origin(self.bias)
-            output = self.manifold.mobius_add(output, bias_on_manifold)
+            bias_on_model = self.model.exponential_map_at_origin(self.bias)
+            output = self.model.mobius_add(output, bias_on_model)
 
-        return self.manifold.project(output)
+        return self.model.project(output)
 
     def extra_repr(self) -> str:
         return f"in_features={self.in_features}, out_features={self.out_features}, bias={self.use_bias}"
@@ -138,18 +134,11 @@ class ToPoincare(HyperbolicLayer):
 
     Parameters
     ----------
-    manifold : MobiusManifold, optional
-        The hyperbolic manifold to use. If None, creates a new PoincareBall
-        with default curvature. Default is None.
+    model : HyperbolicMobiusModel
+        The model that represents hyperbolic space to use.
 
     Notes
     -----
-    The mapping is performed via:
-
-    1. Exponential map at origin: Maps Euclidean vectors to the Poincaré ball
-    2. Projection: Ensures numerical stability by keeping points within bounds
-    3. Riemannian gradient: Applies gradient scaling for proper optimization
-
     The Riemannian gradient correction is crucial for optimization as it
     accounts for the distortion of the hyperbolic metric, scaling gradients
     by :math:`\\frac{(1 - c\\|x\\|^2)^2}{4}`.
@@ -176,15 +165,15 @@ class ToPoincare(HyperbolicLayer):
     PoincareBall.exponential_map_at_origin : The underlying mapping function
     """
 
-    def __init__(self, manifold: Optional[HyperbolicMobiusModel] = None):
-        if manifold is None:
-            manifold = PoincareBall()
+    def __init__(self, model: HyperbolicMobiusModel):
+        if model is None:
+            raise ValueError("A hyperbolic model must be provided.")
 
-        super().__init__(manifold)
+        super().__init__(model)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Map Euclidean points to the Poincaré ball.
+        Map Euclidean points to the Hyperbolic model.
 
         Parameters
         ----------
@@ -194,18 +183,18 @@ class ToPoincare(HyperbolicLayer):
         Returns
         -------
         torch.Tensor
-            Points on the Poincaré ball with Riemannian gradient correction.
+            Points on the Hyperbolic model with Riemannian gradient correction.
             Shape (..., dim).
         """
-        mapped = self.manifold.exponential_map_at_origin(x)
-        projected = self.manifold.project(mapped)
+        mapped = self.model.exponential_map_at_origin(x)
+        projected = self.model.project(mapped)
 
-        return apply_riemannian_gradient(projected, self.manifold.curvature)
+        return apply_riemannian_gradient(projected, self.model.curvature)
 
 
 class FromPoincare(HyperbolicLayer):
     """
-    Layer that maps points from the Poincaré ball to Euclidean space.
+    Layer that maps points from the Hyperbolic model to Euclidean space.
 
     This module provides a differentiable mapping from hyperbolic space back
     to Euclidean space using the logarithmic map at the origin. This is useful
@@ -214,21 +203,8 @@ class FromPoincare(HyperbolicLayer):
 
     Parameters
     ----------
-    manifold : MobiusManifold, optional
-        The hyperbolic manifold to use. If None, creates a new PoincareBall
-        with default curvature. Default is None.
-
-    Notes
-    -----
-    The mapping uses the logarithmic map at the origin, which is the inverse
-    of the exponential map. For a point :math:`x` on the Poincaré ball, it computes
-    the tangent vector at the origin that would map to :math:`x` under the exponential
-    map.
-
-    This layer is useful when:
-    - Transitioning from hyperbolic to Euclidean processing
-    - Extracting hyperbolic features for Euclidean classifiers
-    - Creating hybrid architectures with both geometries
+    model : HyperbolicMobiusModel
+        The model that represents hyperbolic space to use.
 
     Examples
     --------
@@ -252,25 +228,26 @@ class FromPoincare(HyperbolicLayer):
     PoincareBall.logarithmic_map_at_origin : The underlying mapping function
     """
 
-    def __init__(self, manifold: Optional[HyperbolicMobiusModel] = None):
-        if manifold is None:
-            manifold = PoincareBall()
+    def __init__(self, model: HyperbolicMobiusModel):
+        if model is None:
+            raise ValueError("A hyperbolic model must be provided.")
 
-        super().__init__(manifold)
+        super().__init__(model)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Map points from the Poincaré ball to Euclidean space.
+        Map points from the Hyperbolic model to Euclidean space.
 
         Parameters
         ----------
         x : torch.Tensor
-            Input points on the Poincaré ball. Shape (..., dim).
+            Input points on the Hyperbolic model. Shape (..., dim).
 
         Returns
         -------
         torch.Tensor
             Points in Euclidean space (tangent space at origin). Shape (..., dim).
         """
-        x = self.manifold.project(x)
-        return self.manifold.logarithmic_map_at_origin(x)
+        projected = self.model.project(x)
+
+        return self.model.logarithmic_map_at_origin(projected)

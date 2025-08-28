@@ -110,14 +110,14 @@ class HyperbolicMLR(HyperbolicLayer, ParameterInitializationMixin):
         3. Scales a_vals by the conformal factor at each class representative
         4. Computes hyperbolic logits using the functional interface
         """
-        x = self.manifold.project(x)
+        x = self.model.project(x)
 
-        p_vals_on_manifold = self.manifold.exponential_map_at_origin(self.p_vals)
+        p_vals_on_manifold = self.model.exponential_map_at_origin(self.p_vals)
 
-        conformal_factor = 1 - self.manifold.curvature * p_vals_on_manifold.pow(2).sum(dim=1, keepdim=True)
+        conformal_factor = 1 - self.model.curvature * p_vals_on_manifold.pow(2).sum(dim=1, keepdim=True)
         a_vals_scaled = self.a_vals * conformal_factor
 
-        return compute_hyperbolic_mlr_logits(x, a_vals_scaled, p_vals_on_manifold, self.manifold)
+        return compute_hyperbolic_mlr_logits(x, a_vals_scaled, p_vals_on_manifold, self.model)
 
     def extra_repr(self) -> str:
         return f"ball_dim={self.ball_dim}, n_classes={self.n_classes}"

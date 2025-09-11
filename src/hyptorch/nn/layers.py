@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+from hyptorch.exceptions import NoHyperbolicModelProvidedError
 from hyptorch.models.base import HyperbolicMobiusModel
 from hyptorch.nn._mixins import ParameterInitializationMixin
 from hyptorch.nn.base import HyperbolicLayer
@@ -71,7 +72,7 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
         bias: bool = True,
     ):
         if model is None:
-            raise ValueError("A hyperbolic model must be provided.")
+            raise NoHyperbolicModelProvidedError
 
         super().__init__(model)
 
@@ -167,7 +168,7 @@ class ToPoincare(HyperbolicLayer):
 
     def __init__(self, model: HyperbolicMobiusModel):
         if model is None:
-            raise ValueError("A hyperbolic model must be provided.")
+            raise NoHyperbolicModelProvidedError
 
         super().__init__(model)
 
@@ -230,7 +231,7 @@ class FromPoincare(HyperbolicLayer):
 
     def __init__(self, model: HyperbolicMobiusModel):
         if model is None:
-            raise ValueError("A hyperbolic model must be provided.")
+            raise NoHyperbolicModelProvidedError
 
         super().__init__(model)
 

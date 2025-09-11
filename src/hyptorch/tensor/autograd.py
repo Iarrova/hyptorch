@@ -88,7 +88,6 @@ class RiemannianGradient(torch.autograd.Function):
         This scaling ensures that gradient descent steps respect the hyperbolic
         geometry, moving along geodesics rather than straight lines.
         """
-        # TODO: Check correctness of the formula described in Notes
         x, curvature = ctx.saved_tensors
         scale = (1 - curvature * x.pow(2).sum(-1, keepdim=True)).pow(2) / 4
         return grad_output * scale, None

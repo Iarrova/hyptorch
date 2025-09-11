@@ -16,9 +16,7 @@ def _batch_mobius_add(x: torch.Tensor, y: torch.Tensor, c: torch.Tensor) -> torc
 
     Parameters
     ----------
-    x : torch.Tensor
-        Batch of points on the Poincaré ball.
-    y : torch.Tensor
+    x, y : torch.Tensor
         Batch of points on the Poincaré ball.
     c : torch.Tensor
         Curvature parameter (positive). Scalar tensor.
@@ -48,7 +46,10 @@ def _batch_mobius_add(x: torch.Tensor, y: torch.Tensor, c: torch.Tensor) -> torc
     >>> c = torch.tensor(1.0)
     >>> result = _batch_mobius_add(x, y, c)  # Shape (10, 3, 5)
     """
+    # Calculate all pairwise dot products
     xy = torch.einsum("ij,kj->ik", (x, y))
+
+    # Compute squared norms (||x_i||^2 for each x_i) and the same for y
     x2 = squared_norm(x)
     y2 = squared_norm(y)
 
@@ -62,7 +63,7 @@ def _batch_mobius_add(x: torch.Tensor, y: torch.Tensor, c: torch.Tensor) -> torc
 
 
 def compute_hyperbolic_mlr_logits(
-    x: torch.Tensor, weights: torch.Tensor, points: torch.Tensor, manifold: HyperbolicMobiusModel
+    x: torch.Tensor, weights: torch.Tensor, class_points: torch.Tensor, model: HyperbolicMobiusModel
 ) -> torch.Tensor:
     """
     Compute logits for hyperbolic multinomial logistic regression (MLR).
@@ -76,13 +77,14 @@ def compute_hyperbolic_mlr_logits(
     x : torch.Tensor
         Input points on the Poincaré ball. Shape (batch_size, dim).
     weights : torch.Tensor
-        Weights (a-values) for each class, scaled by conformal factor.
+        Weight vectors (a-values) for each class, scaled by conformal factor.
         Shape (n_classes, dim).
-    points : torch.Tensor
+    class_points : torch.Tensor
         Class representatives (p-values) on the Poincaré ball.
         Shape (n_classes, dim).
-    manifold : MobiusManifold
-        The hyperbolic manifold (must be PoincareBall).
+    model : HyperbolicMobiusModel
+        The hyperbolic model instance.
+        Currently only PoincareBall is supported.
 
     Returns
     -------
@@ -93,7 +95,7 @@ def compute_hyperbolic_mlr_logits(
     Raises
     ------
     NotImplementedError
-        If manifold is not an instance of PoincareBall.
+        If model is not an instance of PoincareBall.
 
     Notes
     -----
@@ -126,21 +128,30 @@ def compute_hyperbolic_mlr_logits(
     >>> logits = compute_hyperbolic_mlr_logits(x, weights, points, manifold)
     >>> probs = torch.softmax(logits, dim=1)  # Classification probabilities
     """
-    # TODO: Check correctness of the formula described in Notes
-    if not isinstance(manifold, PoincareBall):
+    if not isinstance(model, PoincareBall):
         raise NotImplementedError("Hyperbolic softmax only implemented for Poincaré ball")
 
-    c = manifold.curvature
+    c = model.curvature
     sqrt_c = torch.sqrt(c)
 
-    lambda_pkc = 2 / (1 - c * points.pow(2).sum(dim=1))
-    k = lambda_pkc * torch.norm(weights, dim=1) / sqrt_c
+    # Step 1: Compute conformal factors at each class point
+    # λ^c_pk = 2 / (1 - c||p_k||²)
+    conformal_factors = 2 / (1 - c * class_points.pow(2).sum(dim=1))
 
-    mob_add = _batch_mobius_add(-points, x, c)
+    # Step 2: Compute overall scale factors for each class
+    # scale_k = λ^c_pk * ||a_k|| / √c
+    class_weight_norms = torch.norm(weights, dim=1)
+    scale_factors = conformal_factors * class_weight_norms / sqrt_c
 
-    num = 2 * sqrt_c * torch.sum(mob_add * weights.unsqueeze(1), dim=-1)
-    denom = torch.norm(weights, dim=1, keepdim=True) * (1 - c * mob_add.pow(2).sum(dim=2))
+    # Step 3: Compute hyperbolic differences between input points and class points
+    # hyperbolic_diff[i,k,:] = -p_k ⊕_c x_i
+    hyperbolic_differences = _batch_mobius_add(-class_points, x, c)
 
-    logits = k.unsqueeze(1) * torch.asinh(num / denom)
+    # Step 4: Compute logits using the hyperbolic MLR formula
+    # logits[i,k] = scale_k * asinh( (2√c <a_k, hyperbolic_diff[i,k,:]> / (||a_k||(1 - c||hyperbolic_diff[i,k,:]||²)) )
+    num = 2 * sqrt_c * torch.sum(hyperbolic_differences * weights.unsqueeze(1), dim=-1)
+    denom = torch.norm(weights, dim=1, keepdim=True) * (1 - c * hyperbolic_differences.pow(2).sum(dim=2))
+
+    logits = scale_factors.unsqueeze(1) * torch.asinh(num / denom)
 
     return logits.permute(1, 0)

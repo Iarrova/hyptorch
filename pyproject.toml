@@ -44,3 +44,9 @@ docs = [
     "sphinx-copybutton>=0.5.2",
     "sphinx-rtd-theme>=3.0.2",
 ]
+examples = [
+    "lightning>=2.5.5",
+    "marimo>=0.15.2",
+    "matplotlib>=3.10.6",
+    "rich>=14.1.0",
+]

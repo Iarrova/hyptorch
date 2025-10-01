@@ -1,11 +1,14 @@
 from abc import ABC, abstractmethod
+from typing import Union
 
 import torch
+import torch.nn as nn
 
+from hyptorch._config import NumericalConstants
 from hyptorch.exceptions import ModelError
 
 
-class HyperbolicModel(ABC):
+class HyperbolicModel(ABC, nn.Module):
     """
     Abstract base class for hyperbolic manifold models.
 
@@ -17,6 +20,9 @@ class HyperbolicModel(ABC):
     curvature : float, optional
         The (absolute) curvature parameter :math:`c` of the hyperbolic space.
         The actual curvature of the space is :math:`-c`, so this value must be strictly positive.
+    trainable_curvature : bool, optional
+        If True, the curvature parameter will be a learnable parameter of the model.
+        Default is False.
 
     Attributes
     ----------
@@ -35,10 +41,28 @@ class HyperbolicModel(ABC):
     stored value is positive, representing the absolute value of the curvature.
     """
 
-    def __init__(self, curvature: float = 1.0) -> None:
+    def __init__(self, curvature: float = 1.0, trainable_curvature: bool = False) -> None:
+        super().__init__()
+
         if curvature <= 0:
             raise ModelError(f"Curvature must be positive, got {curvature}")
-        self._curvature = torch.tensor(curvature, dtype=torch.float32)
+
+        self.trainable_curvature = trainable_curvature
+
+        if trainable_curvature:
+            # TODO: Remove before pushing to production
+            print("[INFO] Using trainable curvature")
+            target = curvature - NumericalConstants.MIN_CURVATURE
+            if target <= 0:
+                raise ValueError(
+                    f"Curvature must be greater than {NumericalConstants.MIN_CURVATURE} to be trainable, got {curvature}"
+                )
+
+            raw_curvature = inverse_softplus(target)
+            self._curvature = nn.Parameter(torch.tensor(raw_curvature, dtype=torch.float32))
+
+        else:
+            self.register_buffer("_curvature", torch.tensor(curvature, dtype=torch.float32))
 
     @property
     def curvature(self) -> torch.Tensor:
@@ -50,6 +74,12 @@ class HyperbolicModel(ABC):
         torch.Tensor
             The curvature parameter as a tensor.
         """
+        if self.trainable_curvature:
+            curvature = torch.nn.functional.softplus(self._curvature) + NumericalConstants.MIN_CURVATURE
+            return torch.clamp(
+                curvature, min=NumericalConstants.MIN_CURVATURE, max=NumericalConstants.MAX_CURVATURE
+            )
+
         return self._curvature
 
     @abstractmethod
@@ -265,3 +295,15 @@ class HyperbolicMobiusModel(HyperbolicModel):
         mobius_add : Möbius addition operation.
         """
         pass
+
+
+def inverse_softplus(y: Union[float, torch.Tensor]) -> torch.Tensor:
+    """
+    Compute inverse of softplus: x such that softplus(x) = y.
+
+    Uses the numerically stable form: log(exp(y) - 1) = log(expm1(y))
+    """
+    y_tensor = torch.as_tensor(y, dtype=torch.float32)
+    if (y_tensor <= 0).any():
+        raise ValueError("Input to inverse_softplus must be positive")
+    return torch.log(torch.expm1(y_tensor))

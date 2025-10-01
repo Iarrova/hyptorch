@@ -360,7 +360,7 @@ def _(
         def _build_euclidean_layers(self):
             self.fc1 = nn.Linear(5 * 5 * CONV2_CHANNELS, HIDDEN_DIM)
             self.fc2 = nn.Linear(HIDDEN_DIM, HYPERBOLIC_DIM)
-        
+
             self.classifier = nn.Linear(HYPERBOLIC_DIM, NUM_CLASSES)
             self.dropout = nn.Dropout(0.2)
 
@@ -411,14 +411,14 @@ def _(
         def __init__(self):
             super().__init__()
 
-            self.hyperbolic_model = PoincareBall(curvature=CURVATURE)
+            self.hyperbolic_model = PoincareBall(curvature=CURVATURE, trainable_curvature=True)
             self._build_hyperbolic_layers()
 
         def _build_hyperbolic_layers(self):
             self.to_poincare = ToPoincare(self.hyperbolic_model)
             self.fc1 = HypLinear(5 * 5 * CONV2_CHANNELS, HIDDEN_DIM, self.hyperbolic_model)
             self.fc2 = HypLinear(HIDDEN_DIM, HYPERBOLIC_DIM, self.hyperbolic_model)
-        
+
             self.classifier = HyperbolicMLR(
                 ball_dim=HYPERBOLIC_DIM,
                 n_classes=NUM_CLASSES,
@@ -602,6 +602,12 @@ def _(analyze_hyperbolic_embeddings_advanced, datamodule, results):
     analyze_hyperbolic_embeddings_advanced(
         results["EuclideanMNISTModule"]["model"], datamodule
     )
+    return
+
+
+@app.cell
+def _(results):
+    results["HyperbolicMNISTModule"]["model"].hyperbolic_model.curvature
     return
 
 

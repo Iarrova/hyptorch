@@ -24,6 +24,9 @@ class PoincareBall(HyperbolicMobiusModel):
     ----------
     curvature : float, optional
         The curvature parameter. Default is 1.0 for the unit Poincaré ball.
+    trainable_curvature : bool, optional
+        If True, the curvature parameter will be a learnable parameter of the model.
+        Default is False.
 
     Notes
     -----
@@ -32,8 +35,8 @@ class PoincareBall(HyperbolicMobiusModel):
     to ensure they remain within the valid domain.
     """
 
-    def __init__(self, curvature: float = 1.0):
-        super().__init__(curvature)
+    def __init__(self, curvature: float = 1.0, trainable_curvature: bool = False) -> None:
+        super().__init__(curvature, trainable_curvature)
 
     def distance(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         """

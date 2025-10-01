@@ -15,3 +15,6 @@ class NumericalConstants:
     TANH_CLAMP_MAX: ClassVar[Final[float]] = 15.0
     ATANH_CLAMP_MIN: ClassVar[Final[float]] = -1 + EPS
     ATANH_CLAMP_MAX: ClassVar[Final[float]] = 1 - EPS
+
+    MIN_CURVATURE: Final[float] = 1e-5
+    MAX_CURVATURE: Final[float] = 10.0

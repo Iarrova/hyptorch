@@ -1,3 +1,14 @@
+"""
+Functional interface for hyperbolic neural network operations.
+
+This module provides stateless functions for hyperbolic computations,
+following PyTorch's functional API pattern (similar to torch.nn.functional).
+
+Functions
+---------
+compute_hyperbolic_mlr_logits
+    Compute logits for hyperbolic multinomial logistic regression.
+"""
 import torch
 
 from hyptorch._config import NumericalConstants

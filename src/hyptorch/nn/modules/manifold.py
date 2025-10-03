@@ -1,3 +1,16 @@
+"""
+Manifold conversion layers for hyperbolic neural networks.
+
+This module provides layers that convert between Euclidean and hyperbolic
+spaces, enabling hybrid architectures that combine both geometries.
+
+Classes
+-------
+ToPoincare
+    Maps Euclidean points to the Poincaré ball using the exponential map.
+FromPoincare
+    Maps points from the Poincaré ball to Euclidean space using the logarithmic map.
+"""
 import torch
 
 from hyptorch.exceptions import NoHyperbolicManifoldProvidedError

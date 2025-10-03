@@ -1,3 +1,21 @@
+"""
+Core tensor operations for hyperbolic geometry.
+
+This module implements low-level tensor operations required for numerical
+stability in hyperbolic computations, including safe norms and hyperbolic
+trigonometric functions.
+
+Functions
+---------
+norm
+    Compute vector norm with numerical stability guarantees.
+squared_norm
+    Compute squared norm efficiently.
+dot_product
+    Compute dot product along the last dimension.
+tanh, atanh
+    Numerically stable hyperbolic trigonometric functions.
+"""
 import torch
 
 from hyptorch._config import NumericalConstants

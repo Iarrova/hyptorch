@@ -1,3 +1,14 @@
+"""
+Hyperbolic linear transformation layer.
+
+This module provides the hyperbolic analog of PyTorch's nn.Linear,
+implementing linear transformations in hyperbolic space using Möbius operations.
+
+Classes
+-------
+HypLinear
+    Hyperbolic linear layer with Möbius matrix-vector multiplication.
+"""
 import torch
 import torch.nn as nn
 

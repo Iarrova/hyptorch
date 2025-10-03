@@ -1,3 +1,20 @@
+"""
+Automatic differentiation for hyperbolic geometry.
+
+This module provides custom autograd functions for Riemannian gradient
+computation in hyperbolic space, ensuring correct gradient flow during
+backpropagation on manifolds.
+
+Classes
+-------
+RiemannianGradient
+    Custom autograd function for Riemannian gradient scaling.
+
+Functions
+---------
+apply_riemannian_gradient
+    Apply Riemannian gradient correction to tensors on the Poincaré ball.
+"""
 import torch
 from torch.autograd.function import FunctionCtx
 

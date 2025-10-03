@@ -1,3 +1,14 @@
+"""
+Mixin classes for neural network parameter initialization.
+
+This module provides reusable initialization methods for hyperbolic neural
+network layers, following PyTorch's initialization conventions.
+
+Classes
+-------
+ParameterInitializationMixin
+    Mixin providing Kaiming uniform and bias initialization methods.
+"""
 import math
 
 import torch

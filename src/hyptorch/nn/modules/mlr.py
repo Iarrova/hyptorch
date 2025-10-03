@@ -1,3 +1,15 @@
+"""
+Hyperbolic multinomial logistic regression layer.
+
+This module implements multi-class classification in hyperbolic space,
+extending logistic regression to operate on the Poincaré ball with
+geodesic decision boundaries.
+
+Classes
+-------
+HyperbolicMLR
+    Hyperbolic MLR layer for classification tasks.
+"""
 import torch
 import torch.nn as nn
 

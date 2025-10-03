@@ -1,3 +1,15 @@
+"""
+Poincaré ball model of hyperbolic space.
+
+This module implements the Poincaré ball model, one of the most widely used
+representations of hyperbolic geometry in machine learning. The model represents
+hyperbolic space as the interior of a unit ball with a Riemannian metric.
+
+Classes
+-------
+PoincareBall
+    Complete implementation of hyperbolic operations in the Poincaré ball model.
+"""
 import torch
 
 from hyptorch._config import NumericalConstants

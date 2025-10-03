@@ -1,3 +1,14 @@
+"""
+Base classes for hyperbolic neural network layers.
+
+This module provides foundational classes that all hyperbolic layers inherit from,
+establishing common patterns for manifold management and curvature access.
+
+Classes
+-------
+HyperbolicLayer
+    Abstract base class for all hyperbolic neural network layers.
+"""
 import torch
 import torch.nn as nn
 

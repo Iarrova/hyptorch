@@ -1,3 +1,17 @@
+"""
+Abstract base classes for hyperbolic manifolds.
+
+This module defines the core interfaces for hyperbolic geometry operations.
+All manifold implementations inherit from these base classes to ensure
+consistent API across different models of hyperbolic space.
+
+Classes
+-------
+HyperbolicManifold
+    Abstract base class providing fundamental hyperbolic operations.
+MobiusManifold
+    Extension supporting Möbius arithmetic operations.
+"""
 from abc import ABC, abstractmethod
 from typing import Union
 

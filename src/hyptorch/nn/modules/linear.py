@@ -69,7 +69,7 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
         out_features: int,
         manifold: MobiusManifold,
         bias: bool = True,
-    ):
+    ) -> None:
         if manifold is None:
             raise NoHyperbolicManifoldProvidedError
 

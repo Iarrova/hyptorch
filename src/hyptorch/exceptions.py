@@ -19,6 +19,6 @@ class HyperbolicLayerError(HyperbolicError):
 class NoHyperbolicManifoldProvidedError(HyperbolicLayerError):
     """Raised when no hyperbolic manifold is provided."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         message = "No hyperbolic manifold provided."
         super().__init__(message)

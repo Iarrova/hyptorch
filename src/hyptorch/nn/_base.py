@@ -30,7 +30,7 @@ class HyperbolicLayer(nn.Module):
     consistent handling of the model and its properties.
     """
 
-    def __init__(self, manifold: MobiusManifold):
+    def __init__(self, manifold: MobiusManifold) -> None:
         super().__init__()
         self.manifold = manifold
 

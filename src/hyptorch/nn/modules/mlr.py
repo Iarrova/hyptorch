@@ -62,7 +62,7 @@ class HyperbolicMLR(HyperbolicLayer, ParameterInitializationMixin):
     compute_hyperbolic_mlr_logits : Function that computes the hyperbolic logits
     """
 
-    def __init__(self, ball_dim: int, n_classes: int, manifold: MobiusManifold):
+    def __init__(self, ball_dim: int, n_classes: int, manifold: MobiusManifold) -> None:
         if not isinstance(manifold, PoincareBall):
             raise NotImplementedError("Currently only PoincareBall model is supported.")
 

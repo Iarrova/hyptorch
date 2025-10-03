@@ -48,7 +48,7 @@ class ToPoincare(HyperbolicLayer):
     PoincareBall.exponential_map_at_origin : The underlying mapping function
     """
 
-    def __init__(self, manifold: MobiusManifold):
+    def __init__(self, manifold: MobiusManifold) -> None:
         if manifold is None:
             raise NoHyperbolicManifoldProvidedError
 
@@ -111,7 +111,7 @@ class FromPoincare(HyperbolicLayer):
     PoincareBall.logarithmic_map_at_origin : The underlying mapping function
     """
 
-    def __init__(self, manifold: MobiusManifold):
+    def __init__(self, manifold: MobiusManifold) -> None:
         if manifold is None:
             raise NoHyperbolicManifoldProvidedError
 

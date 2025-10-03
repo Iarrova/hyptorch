@@ -80,7 +80,10 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
         self.use_bias = bias
 
         self.weight = nn.Parameter(torch.empty(out_features, in_features))
-        self.bias = nn.Parameter(torch.empty(out_features)) if bias else None
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features))
+        else:
+            self.register_parameter('bias', None)
 
         self._init_parameters()
 

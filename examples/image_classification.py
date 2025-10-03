@@ -23,7 +23,7 @@ def _():
     from typing import Tuple, Optional, Dict, Any
 
     import pytorch_lightning as pl
-    from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor, RichProgressBar
+    from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor, RichProgressBar, Callback
     from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
     from pytorch_lightning.utilities.model_summary import ModelSummary
     from torchmetrics import Accuracy
@@ -34,7 +34,6 @@ def _():
         LearningRateMonitor,
         ModelCheckpoint,
         Optional,
-        RichProgressBar,
         datasets,
         nn,
         np,
@@ -69,13 +68,13 @@ def _(pl):
     NUM_CLASSES: int = 10
 
     # Hyperbolic parameters
-    CURVATURE: float = 1.0
+    CURVATURE: float = 0.05
 
     # Training parameters
     MAX_EPOCHS: int = 10
     LEARNING_RATE: float = 1e-3
     WEIGHT_DECAY: float = 1e-4
-    PATIENCE: int = 5  # Early stopping patience
+    PATIENCE: int = 5
 
     # System
     SEED: int = 42
@@ -449,13 +448,7 @@ def _(
 
 
 @app.cell
-def _(
-    EarlyStopping,
-    LearningRateMonitor,
-    ModelCheckpoint,
-    PATIENCE: int,
-    RichProgressBar,
-):
+def _(EarlyStopping, LearningRateMonitor, ModelCheckpoint, PATIENCE: int):
     def setup_callbacks():
         checkpoint_callback = ModelCheckpoint(
             dirpath=f"./examples/checkpoints",
@@ -474,9 +467,7 @@ def _(
 
         lr_monitor = LearningRateMonitor(logging_interval='epoch')
 
-        progress_bar = RichProgressBar()
-
-        callbacks = [checkpoint_callback, early_stop_callback, lr_monitor, progress_bar]
+        callbacks = [checkpoint_callback, early_stop_callback, lr_monitor]
 
         return callbacks
     return (setup_callbacks,)
@@ -501,6 +492,7 @@ def _(
             trainer = pl.Trainer(
                 max_epochs=MAX_EPOCHS,
                 callbacks=callbacks,
+                enable_progress_bar=False
             )
             trainer.fit(model, datamodule)
             test_results = trainer.test(ckpt_path='best', datamodule=datamodule)
@@ -520,8 +512,17 @@ def _(
 
 
 @app.cell
-def _(BATCH_SIZE: int, F, datamodule, np, plt, results, torch):
-    def analyze_hyperbolic_embeddings_advanced(model, datamodule):
+def _(
+    BATCH_SIZE: int,
+    CURVATURE: float,
+    F,
+    datamodule,
+    np,
+    plt,
+    results,
+    torch,
+):
+    def analyze_hyperbolic_embeddings(model, datamodule):
         model.eval()
         test_loader = datamodule.test_dataloader()
 
@@ -563,27 +564,38 @@ def _(BATCH_SIZE: int, F, datamodule, np, plt, results, torch):
         # Calculate distances from origin (uncertainty measure)
         distances = np.linalg.norm(emb_np, axis=1)
 
-        # Create comprehensive visualization
-        fig = plt.figure(figsize=(20, 12))
+        # Create visualization
+        fig = plt.figure(figsize=(12, 10))
 
-        # Plot 1: Embeddings colored by true labels
-        ax1 = plt.subplot(2, 4, 1)
+        # Plot: Embeddings colored by true labels
+        ax = plt.subplot(1, 1, 1)
         colors = plt.cm.tab10(np.arange(10))
-        circle = plt.Circle((0, 0), 1, fill=False, color='black', linewidth=2, linestyle='--')
-        ax1.add_patch(circle)
+    
+        # Draw Poincaré disk boundary
+        circle = plt.Circle((0, 0), 1/torch.sqrt(torch.tensor(CURVATURE)).item(), fill=False, color='black', linewidth=2, linestyle='--', label='Poincaré boundary')
+        ax.add_patch(circle)
 
         for digit in range(10):
             mask = lab_np == digit
             if mask.sum() > 0:
-                ax1.scatter(emb_np[mask, 0], emb_np[mask, 1], 
-                           c=[colors[digit]], label=f'{digit}', alpha=0.7, s=15)
+                ax.scatter(emb_np[mask, 0], emb_np[mask, 1], 
+                           c=[colors[digit]], label=f'Digit {digit}', alpha=0.7, s=30)
 
-        ax1.set_xlim(-1.1, 1.1)
-        ax1.set_ylim(-1.1, 1.1)
-        ax1.set_aspect('equal')
-        ax1.set_title('Embeddings by True Label', fontweight='bold')
-        ax1.legend(ncol=2, fontsize=8)
-        ax1.grid(True, alpha=0.3)
+        ax.set_xlim(-1.1/torch.sqrt(torch.tensor(CURVATURE)).item(), 1.1/torch.sqrt(torch.tensor(CURVATURE)).item())
+        ax.set_ylim(-1.1/torch.sqrt(torch.tensor(CURVATURE)).item(), 1.1/torch.sqrt(torch.tensor(CURVATURE)).item())
+        ax.set_aspect('equal')
+        ax.set_xlabel('Dimension 1', fontsize=12)
+        ax.set_ylabel('Dimension 2', fontsize=12)
+        ax.set_title('Hyperbolic Embeddings in Poincaré Disk', fontweight='bold', fontsize=14)
+        ax.legend(ncol=2, fontsize=9, loc='upper right')
+        ax.grid(True, alpha=0.3)
+    
+        # Add statistics
+        avg_distance = distances.mean()
+        stats_text = f'Avg distance from origin: {avg_distance:.3f}\nMax distance: {distances.max():.3f}'
+        ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, 
+                fontsize=10, verticalalignment='top',
+                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
 
         plt.tight_layout()
         plt.show()
@@ -591,28 +603,100 @@ def _(BATCH_SIZE: int, F, datamodule, np, plt, results, torch):
         return fig
 
     # Run advanced analysis
-    analyze_hyperbolic_embeddings_advanced(
+    analyze_hyperbolic_embeddings(
         results["HyperbolicMNISTModule"]["model"], datamodule
     )
-    return (analyze_hyperbolic_embeddings_advanced,)
+    return
 
 
 @app.cell
-def _(analyze_hyperbolic_embeddings_advanced, datamodule, results):
-    analyze_hyperbolic_embeddings_advanced(
+def _(BATCH_SIZE: int, F, datamodule, np, plt, results, torch):
+    def analyze_euclidean_embeddings(model, datamodule):
+        model.eval()
+        test_loader = datamodule.test_dataloader()
+
+        embeddings_list = []
+        labels_list = []
+        predictions_list = []
+        confidences_list = []
+
+        with torch.no_grad():
+            for batch_idx, (data, target) in enumerate(test_loader):
+                if len(embeddings_list) * BATCH_SIZE >= 1000:
+                    break
+
+                data = data.to(model.device)
+                logits, embeddings = model(data)
+
+                # Get predictions and confidences
+                probs = F.softmax(logits, dim=1)
+                predictions = torch.argmax(logits, dim=1)
+                confidences = torch.max(probs, dim=1)[0]
+
+                embeddings_list.append(embeddings.cpu())
+                labels_list.append(target)
+                predictions_list.append(predictions.cpu())
+                confidences_list.append(confidences.cpu())
+
+        # Combine all data
+        embeddings = torch.cat(embeddings_list, dim=0)[:1000]
+        labels = torch.cat(labels_list, dim=0)[:1000]
+        predictions = torch.cat(predictions_list, dim=0)[:1000]
+        confidences = torch.cat(confidences_list, dim=0)[:1000]
+
+        # Convert to numpy
+        emb_np = embeddings.numpy()
+        lab_np = labels.numpy()
+        pred_np = predictions.numpy()
+        conf_np = confidences.numpy()
+
+        # Calculate distances from origin
+        distances = np.linalg.norm(emb_np, axis=1)
+
+        # Create visualization
+        fig = plt.figure(figsize=(12, 10))
+
+        # Plot: Embeddings colored by true labels
+        ax = plt.subplot(1, 1, 1)
+        colors = plt.cm.tab10(np.arange(10))
+
+        for digit in range(10):
+            mask = lab_np == digit
+            if mask.sum() > 0:
+                ax.scatter(emb_np[mask, 0], emb_np[mask, 1], 
+                           c=[colors[digit]], label=f'Digit {digit}', alpha=0.7, s=30)
+
+        # Set adaptive axis limits
+        x_min, x_max = emb_np[:, 0].min(), emb_np[:, 0].max()
+        y_min, y_max = emb_np[:, 1].min(), emb_np[:, 1].max()
+        x_padding = (x_max - x_min) * 0.1
+        y_padding = (y_max - y_min) * 0.1
+        ax.set_xlim(x_min - x_padding, x_max + x_padding)
+        ax.set_ylim(y_min - y_padding, y_max + y_padding)
+    
+        ax.set_aspect('equal')
+        ax.set_xlabel('Dimension 1', fontsize=12)
+        ax.set_ylabel('Dimension 2', fontsize=12)
+        ax.set_title('Euclidean Embeddings', fontweight='bold', fontsize=14)
+        ax.legend(ncol=2, fontsize=9, loc='upper right')
+        ax.grid(True, alpha=0.3)
+    
+        # Add statistics
+        avg_distance = distances.mean()
+        std_distance = distances.std()
+        stats_text = f'Avg distance from origin: {avg_distance:.3f}\nStd distance: {std_distance:.3f}\nMax distance: {distances.max():.3f}'
+        ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, 
+                fontsize=10, verticalalignment='top',
+                bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.5))
+
+        plt.tight_layout()
+        plt.show()
+
+        return fig
+
+    analyze_euclidean_embeddings(
         results["EuclideanMNISTModule"]["model"], datamodule
     )
-    return
-
-
-@app.cell
-def _(results):
-    results["HyperbolicMNISTModule"]["model"].hyperbolic_model.curvature
-    return
-
-
-@app.cell
-def _():
     return
 
 

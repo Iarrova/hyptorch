@@ -5,10 +5,10 @@ import torch
 import torch.nn as nn
 
 from hyptorch._config import NumericalConstants
-from hyptorch.exceptions import ModelError
+from hyptorch.exceptions import ManifoldError
 
 
-class HyperbolicModel(ABC, nn.Module):
+class HyperbolicManifold(ABC, nn.Module):
     """
     Abstract base class for hyperbolic manifold models.
 
@@ -31,7 +31,7 @@ class HyperbolicModel(ABC, nn.Module):
 
     Raises
     ------
-    ModelError
+    ManifoldError
         If curvature is not positive.
 
     Notes
@@ -45,13 +45,11 @@ class HyperbolicModel(ABC, nn.Module):
         super().__init__()
 
         if curvature <= 0:
-            raise ModelError(f"Curvature must be positive, got {curvature}")
+            raise ManifoldError(f"Curvature must be positive, got {curvature}")
 
         self.trainable_curvature = trainable_curvature
 
         if trainable_curvature:
-            # TODO: Remove before pushing to production
-            print("[INFO] Using trainable curvature")
             target = curvature - NumericalConstants.MIN_CURVATURE
             if target <= 0:
                 raise ValueError(
@@ -239,11 +237,11 @@ class HyperbolicModel(ABC, nn.Module):
         pass
 
 
-class HyperbolicMobiusModel(HyperbolicModel):
+class MobiusManifold(HyperbolicManifold):
     """
-    Extension of HyperbolicModel that supports Möbius operations.
+    Extension of HyperbolicManifold that supports Möbius operations.
 
-    This interface adds operations specific to hyperbolic models that support
+    This interface adds operations specific to hyperbolic manifolds that support
     Möbius operations, such as Möbius addition and Möbius matrix-vector
     multiplication. These operations are essential for implementing hyperbolic
     neural networks and other geometric transformations in hyperbolic space.

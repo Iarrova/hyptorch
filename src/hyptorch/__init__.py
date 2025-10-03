@@ -1,4 +1,4 @@
-from hyptorch.models import PoincareBall
+from hyptorch.manifolds import PoincareBall
 from hyptorch.nn import (
     FromPoincare,
     HyperbolicMLR,

@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 
-from hyptorch.models import PoincareBall
-from hyptorch.models.base import HyperbolicMobiusModel
+from hyptorch.manifolds import PoincareBall
+from hyptorch.manifolds.base import MobiusManifold
 from hyptorch.nn._base import HyperbolicLayer
 from hyptorch.nn._mixins import ParameterInitializationMixin
 from hyptorch.nn.functional import compute_hyperbolic_mlr_logits
@@ -62,11 +62,11 @@ class HyperbolicMLR(HyperbolicLayer, ParameterInitializationMixin):
     compute_hyperbolic_mlr_logits : Function that computes the hyperbolic logits
     """
 
-    def __init__(self, ball_dim: int, n_classes: int, model: HyperbolicMobiusModel):
-        if not isinstance(model, PoincareBall):
+    def __init__(self, ball_dim: int, n_classes: int, manifold: MobiusManifold):
+        if not isinstance(manifold, PoincareBall):
             raise NotImplementedError("Currently only PoincareBall model is supported.")
 
-        super().__init__(model)
+        super().__init__(manifold)
 
         self.ball_dim = ball_dim
         self.n_classes = n_classes
@@ -109,14 +109,16 @@ class HyperbolicMLR(HyperbolicLayer, ParameterInitializationMixin):
         3. Scales weight by the conformal factor at each class representative
         4. Computes hyperbolic logits using the functional interface
         """
-        x = self.model.project(x)
+        x = self.manifold.project(x)
 
-        class_points_on_manifold = self.model.exponential_map_at_origin(self.class_points)
+        class_points_on_manifold = self.manifold.exponential_map_at_origin(self.class_points)
 
-        conformal_factor = 1 - self.model.curvature * class_points_on_manifold.pow(2).sum(dim=1, keepdim=True)
+        conformal_factor = 1 - self.manifold.curvature * class_points_on_manifold.pow(2).sum(
+            dim=1, keepdim=True
+        )
         weight_scaled = self.weight * conformal_factor
 
-        return compute_hyperbolic_mlr_logits(x, weight_scaled, class_points_on_manifold, self.model)
+        return compute_hyperbolic_mlr_logits(x, weight_scaled, class_points_on_manifold, self.manifold)
 
     def extra_repr(self) -> str:
         return f"ball_dim={self.ball_dim}, n_classes={self.n_classes}"

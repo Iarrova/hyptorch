@@ -1,7 +1,7 @@
 import torch
 
-from hyptorch.exceptions import NoHyperbolicModelProvidedError
-from hyptorch.models.base import HyperbolicMobiusModel
+from hyptorch.exceptions import NoHyperbolicManifoldProvidedError
+from hyptorch.manifolds.base import MobiusManifold
 from hyptorch.nn._base import HyperbolicLayer
 from hyptorch.tensor import apply_riemannian_gradient
 
@@ -48,11 +48,11 @@ class ToPoincare(HyperbolicLayer):
     PoincareBall.exponential_map_at_origin : The underlying mapping function
     """
 
-    def __init__(self, model: HyperbolicMobiusModel):
-        if model is None:
-            raise NoHyperbolicModelProvidedError
+    def __init__(self, manifold: MobiusManifold):
+        if manifold is None:
+            raise NoHyperbolicManifoldProvidedError
 
-        super().__init__(model)
+        super().__init__(manifold)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -69,10 +69,10 @@ class ToPoincare(HyperbolicLayer):
             Points on the Hyperbolic model with Riemannian gradient correction.
             Shape (..., dim).
         """
-        mapped = self.model.exponential_map_at_origin(x)
-        projected = self.model.project(mapped)
+        mapped = self.manifold.exponential_map_at_origin(x)
+        projected = self.manifold.project(mapped)
 
-        return apply_riemannian_gradient(projected, self.model.curvature)
+        return apply_riemannian_gradient(projected, self.manifold.curvature)
 
 
 class FromPoincare(HyperbolicLayer):
@@ -111,11 +111,11 @@ class FromPoincare(HyperbolicLayer):
     PoincareBall.logarithmic_map_at_origin : The underlying mapping function
     """
 
-    def __init__(self, model: HyperbolicMobiusModel):
-        if model is None:
-            raise NoHyperbolicModelProvidedError
+    def __init__(self, manifold: MobiusManifold):
+        if manifold is None:
+            raise NoHyperbolicManifoldProvidedError
 
-        super().__init__(model)
+        super().__init__(manifold)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -131,6 +131,6 @@ class FromPoincare(HyperbolicLayer):
         torch.Tensor
             Points in Euclidean space (tangent space at origin). Shape (..., dim).
         """
-        projected = self.model.project(x)
+        projected = self.manifold.project(x)
 
-        return self.model.logarithmic_map_at_origin(projected)
+        return self.manifold.logarithmic_map_at_origin(projected)

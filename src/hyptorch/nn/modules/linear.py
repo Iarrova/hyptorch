@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 
-from hyptorch.exceptions import NoHyperbolicModelProvidedError
-from hyptorch.models.base import HyperbolicMobiusModel
+from hyptorch.exceptions import NoHyperbolicManifoldProvidedError
+from hyptorch.manifolds.base import MobiusManifold
 from hyptorch.nn._base import HyperbolicLayer
 from hyptorch.nn._mixins import ParameterInitializationMixin
 
@@ -21,8 +21,8 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
         Size of each input sample.
     out_features : int
         Size of each output sample.
-    model : HyperbolicMobiusModel
-        The model that represents hyperbolic space to use.
+    manifold : MobiusManifold
+        The manifold that represents hyperbolic space to use.
     bias : bool, optional
         If True, adds a learnable bias to the output. Default is True.
 
@@ -67,13 +67,13 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
         self,
         in_features: int,
         out_features: int,
-        model: HyperbolicMobiusModel,
+        manifold: MobiusManifold,
         bias: bool = True,
     ):
-        if model is None:
-            raise NoHyperbolicModelProvidedError
+        if manifold is None:
+            raise NoHyperbolicManifoldProvidedError
 
-        super().__init__(model)
+        super().__init__(manifold)
 
         self.in_features = in_features
         self.out_features = out_features
@@ -110,14 +110,14 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
         torch.Tensor
             Transformed points on the model. Shape (..., out_features).
         """
-        projected = self.model.project(x)
+        projected = self.manifold.project(x)
 
-        output = self.model.mobius_matvec(self.weight, projected)
+        output = self.manifold.mobius_matvec(self.weight, projected)
         if self.bias is not None:
-            bias_on_model = self.model.exponential_map_at_origin(self.bias)
-            output = self.model.mobius_add(output, bias_on_model)
+            bias_on_manifold = self.manifold.exponential_map_at_origin(self.bias)
+            output = self.manifold.mobius_add(output, bias_on_manifold)
 
-        return self.model.project(output)
+        return self.manifold.project(output)
 
     def extra_repr(self) -> str:
         return f"in_features={self.in_features}, out_features={self.out_features}, bias={self.use_bias}"

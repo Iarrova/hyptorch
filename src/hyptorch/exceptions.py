@@ -4,8 +4,8 @@ class HyperbolicError(Exception):
     pass
 
 
-class ModelError(HyperbolicError):
-    """Raised for model-specific errors."""
+class ManifoldError(HyperbolicError):
+    """Raised for manifold-specific errors."""
 
     pass
 
@@ -16,9 +16,9 @@ class HyperbolicLayerError(HyperbolicError):
     pass
 
 
-class NoHyperbolicModelProvidedError(HyperbolicLayerError):
-    """Raised when no hyperbolic model is provided."""
+class NoHyperbolicManifoldProvidedError(HyperbolicLayerError):
+    """Raised when no hyperbolic manifold is provided."""
 
     def __init__(self):
-        message = "No hyperbolic model provided."
+        message = "No hyperbolic manifold provided."
         super().__init__(message)

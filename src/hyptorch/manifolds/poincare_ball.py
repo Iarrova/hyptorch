@@ -1,11 +1,11 @@
 import torch
 
 from hyptorch._config import NumericalConstants
-from hyptorch.models.base import HyperbolicMobiusModel
+from hyptorch.manifolds.base import HyperbolicManifold
 from hyptorch.tensor import atanh, dot_product, norm, squared_norm, tanh
 
 
-class PoincareBall(HyperbolicMobiusModel):
+class PoincareBall(HyperbolicManifold):
     """
     Poincaré ball model of hyperbolic space.
 

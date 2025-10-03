@@ -1,8 +1,8 @@
 import torch
 
 from hyptorch._config import NumericalConstants
-from hyptorch.models import PoincareBall
-from hyptorch.models.base import HyperbolicMobiusModel
+from hyptorch.manifolds import PoincareBall
+from hyptorch.manifolds.base import MobiusManifold
 from hyptorch.tensor import squared_norm
 
 
@@ -63,7 +63,7 @@ def _batch_mobius_add(x: torch.Tensor, y: torch.Tensor, c: torch.Tensor) -> torc
 
 
 def compute_hyperbolic_mlr_logits(
-    x: torch.Tensor, weights: torch.Tensor, class_points: torch.Tensor, model: HyperbolicMobiusModel
+    x: torch.Tensor, weights: torch.Tensor, class_points: torch.Tensor, manifold: MobiusManifold
 ) -> torch.Tensor:
     """
     Compute logits for hyperbolic multinomial logistic regression (MLR).
@@ -128,10 +128,10 @@ def compute_hyperbolic_mlr_logits(
     >>> logits = compute_hyperbolic_mlr_logits(x, weights, points, manifold)
     >>> probs = torch.softmax(logits, dim=1)  # Classification probabilities
     """
-    if not isinstance(model, PoincareBall):
+    if not isinstance(manifold, PoincareBall):
         raise NotImplementedError("Hyperbolic softmax only implemented for Poincaré ball")
 
-    c = model.curvature
+    c = manifold.curvature
     sqrt_c = torch.sqrt(c)
 
     # Step 1: Compute conformal factors at each class point

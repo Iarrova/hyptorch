@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from hyptorch.models.base import HyperbolicMobiusModel
+from hyptorch.manifolds.base import MobiusManifold
 
 
 class HyperbolicLayer(nn.Module):
@@ -30,18 +30,18 @@ class HyperbolicLayer(nn.Module):
     consistent handling of the model and its properties.
     """
 
-    def __init__(self, model: HyperbolicMobiusModel):
+    def __init__(self, manifold: MobiusManifold):
         super().__init__()
-        self.model = model
+        self.manifold = manifold
 
     @property
     def curvature(self) -> torch.Tensor:
         """
-        Get the curvature parameter of the hyperbolic model.
+        Get the curvature parameter of the hyperbolic manifold.
 
         Returns
         -------
         torch.Tensor
             The curvature parameter as a tensor.
         """
-        return self.model.curvature
+        return self.manifold.curvature

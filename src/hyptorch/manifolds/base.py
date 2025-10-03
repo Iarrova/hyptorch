@@ -294,6 +294,17 @@ class MobiusManifold(HyperbolicManifold):
         """
         pass
 
+    def extra_repr(self) -> str:
+        """
+        Return extra representation string showing curvature configuration.
+
+        Returns
+        -------
+        str
+            String representation of curvature parameters.
+        """
+        return f"curvature={self.curvature.item():.6f}, trainable_curvature={self.trainable_curvature}"
+
 
 def inverse_softplus(y: Union[float, torch.Tensor]) -> torch.Tensor:
     """

@@ -3,8 +3,8 @@ import torch.nn as nn
 
 from hyptorch.models import PoincareBall
 from hyptorch.models.base import HyperbolicMobiusModel
+from hyptorch.nn._base import HyperbolicLayer
 from hyptorch.nn._mixins import ParameterInitializationMixin
-from hyptorch.nn.base import HyperbolicLayer
 from hyptorch.nn.functional import compute_hyperbolic_mlr_logits
 
 

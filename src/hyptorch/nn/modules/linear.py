@@ -52,8 +52,8 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
 
     Examples
     --------
-    >>> model = PoincareBall(curvature=1.0)
-    >>> layer = HypLinear(10, 5, model=model)
+    >>> manifold = PoincareBall(curvature=1.0)
+    >>> layer = HypLinear(10, 5, manifold=manifold)
     >>> x = torch.randn(32, 10) * 0.1  # Batch of 32 samples
     >>> y = layer(x)  # Output shape: (32, 5)
 
@@ -103,12 +103,12 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
         Parameters
         ----------
         x : torch.Tensor
-            Input tensor of points on the model. Shape (..., in_features).
+            Input tensor of points on the manifold. Shape (..., in_features).
 
         Returns
         -------
         torch.Tensor
-            Transformed points on the model. Shape (..., out_features).
+            Transformed points on the manifold. Shape (..., out_features).
         """
         projected = self.manifold.project(x)
 

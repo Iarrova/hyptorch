@@ -17,8 +17,8 @@ class ToPoincare(HyperbolicLayer):
 
     Parameters
     ----------
-    model : HyperbolicMobiusModel
-        The model that represents hyperbolic space to use.
+    manifold : MobiusManifold
+        The manifold that represents hyperbolic space to use.
 
     Notes
     -----
@@ -56,7 +56,7 @@ class ToPoincare(HyperbolicLayer):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Map Euclidean points to the Hyperbolic model.
+        Map Euclidean points to the Poincaré ball.
 
         Parameters
         ----------
@@ -66,7 +66,7 @@ class ToPoincare(HyperbolicLayer):
         Returns
         -------
         torch.Tensor
-            Points on the Hyperbolic model with Riemannian gradient correction.
+            Points on the Poincaré ball with Riemannian gradient correction.
             Shape (..., dim).
         """
         mapped = self.manifold.exponential_map_at_origin(x)
@@ -77,7 +77,7 @@ class ToPoincare(HyperbolicLayer):
 
 class FromPoincare(HyperbolicLayer):
     """
-    Layer that maps points from the Hyperbolic model to Euclidean space.
+    Layer that maps points from the Poincaré ball to Euclidean space.
 
     This module provides a differentiable mapping from hyperbolic space back
     to Euclidean space using the logarithmic map at the origin. This is useful
@@ -86,8 +86,8 @@ class FromPoincare(HyperbolicLayer):
 
     Parameters
     ----------
-    model : HyperbolicMobiusModel
-        The model that represents hyperbolic space to use.
+    manifold : MobiusManifold
+        The manifold that represents hyperbolic space to use.
 
     Examples
     --------
@@ -119,12 +119,12 @@ class FromPoincare(HyperbolicLayer):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Map points from the Hyperbolic model to Euclidean space.
+        Map points from the Poincaré ball to Euclidean space.
 
         Parameters
         ----------
         x : torch.Tensor
-            Input points on the Hyperbolic model. Shape (..., dim).
+            Input points on the Poincaré ball. Shape (..., dim).
 
         Returns
         -------

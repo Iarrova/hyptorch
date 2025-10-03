@@ -82,8 +82,8 @@ def compute_hyperbolic_mlr_logits(
     class_points : torch.Tensor
         Class representatives (p-values) on the Poincaré ball.
         Shape (n_classes, dim).
-    model : HyperbolicMobiusModel
-        The hyperbolic model instance.
+    manifold : MobiusManifold
+        The hyperbolic manifold instance.
         Currently only PoincareBall is supported.
 
     Returns
@@ -95,7 +95,7 @@ def compute_hyperbolic_mlr_logits(
     Raises
     ------
     NotImplementedError
-        If model is not an instance of PoincareBall.
+        If manifold is not an instance of PoincareBall.
 
     Notes
     -----

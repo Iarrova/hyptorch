@@ -14,20 +14,20 @@ class HyperbolicLayer(nn.Module):
 
     Parameters
     ----------
-    model : HyperbolicMobiusModel
-        The hyperbolic model on which the layer operates.
+    manifold : MobiusManifold
+        The hyperbolic manifold on which the layer operates.
 
     Attributes
     ----------
-    model : HyperbolicMobiusModel
-        The hyperbolic model instance.
+    manifold : MobiusManifold
+        The hyperbolic manifold instance.
     curvature : torch.Tensor
-        The curvature of the model (accessible via property).
+        The curvature of the manifold (accessible via property).
 
     Notes
     -----
     All hyperbolic layers should inherit from this base class to ensure
-    consistent handling of the model and its properties.
+    consistent handling of the manifold and its properties.
     """
 
     def __init__(self, manifold: MobiusManifold) -> None:

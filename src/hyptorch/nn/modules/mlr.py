@@ -23,8 +23,8 @@ class HyperbolicMLR(HyperbolicLayer, ParameterInitializationMixin):
         Dimension of the Poincaré ball (input feature dimension).
     n_classes : int
         Number of classes for classification.
-    model : HyperbolicMobiusModel
-        The hyperbolic model representing hyperbolic space.
+    manifold : MobiusManifold
+        The hyperbolic manifold representing hyperbolic space.
         Currently only PoincareBall is supported.
 
     Attributes
@@ -64,7 +64,7 @@ class HyperbolicMLR(HyperbolicLayer, ParameterInitializationMixin):
 
     def __init__(self, ball_dim: int, n_classes: int, manifold: MobiusManifold) -> None:
         if not isinstance(manifold, PoincareBall):
-            raise NotImplementedError("Currently only PoincareBall model is supported.")
+            raise NotImplementedError("Currently only PoincareBall manifold is supported.")
 
         super().__init__(manifold)
 

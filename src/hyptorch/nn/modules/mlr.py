@@ -78,6 +78,11 @@ class HyperbolicMLR(HyperbolicLayer, ParameterInitializationMixin):
         if not isinstance(manifold, PoincareBall):
             raise NotImplementedError("Currently only PoincareBall manifold is supported.")
 
+        if ball_dim <= 0:
+            raise ValueError(f"ball_dim must be positive, got {ball_dim}")
+        if n_classes <= 0:
+            raise ValueError(f"n_classes must be positive, got {n_classes}")
+
         super().__init__(manifold)
 
         self.ball_dim = ball_dim

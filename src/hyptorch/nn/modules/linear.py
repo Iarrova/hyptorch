@@ -84,6 +84,11 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
         if manifold is None:
             raise NoHyperbolicManifoldProvidedError
 
+        if in_features <= 0:
+            raise ValueError(f"in_features must be positive, got {in_features}")
+        if out_features <= 0:
+            raise ValueError(f"out_features must be positive, got {out_features}")
+
         super().__init__(manifold)
 
         self.in_features = in_features

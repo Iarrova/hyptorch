@@ -40,6 +40,10 @@ class PoincareBall(HyperbolicManifold):
     trainable_curvature : bool, optional
         If True, the curvature parameter will be a learnable parameter of the model.
         Default is False.
+    device : torch.device or str, optional
+        Device on which to create tensors. Default is None (CPU).
+    dtype : torch.dtype, optional
+        Data type for tensors. Default is torch.float32.
 
     Notes
     -----
@@ -48,8 +52,14 @@ class PoincareBall(HyperbolicManifold):
     to ensure they remain within the valid domain.
     """
 
-    def __init__(self, curvature: float = 1.0, trainable_curvature: bool = False) -> None:
-        super().__init__(curvature, trainable_curvature)
+    def __init__(
+        self,
+        curvature: float = 1.0,
+        trainable_curvature: bool = False,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype = torch.float32,
+    ) -> None:
+        super().__init__(curvature, trainable_curvature, device, dtype)
 
     def distance(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         """

@@ -12,6 +12,7 @@ HyperbolicManifold
 MobiusManifold
     Extension supporting Möbius arithmetic operations.
 """
+
 from abc import ABC, abstractmethod
 from typing import Union
 
@@ -37,6 +38,10 @@ class HyperbolicManifold(ABC, nn.Module):
     trainable_curvature : bool, optional
         If True, the curvature parameter will be a learnable parameter of the model.
         Default is False.
+    device : torch.device or str, optional
+        Device on which to create tensors. Default is None (CPU).
+    dtype : torch.dtype, optional
+        Data type for tensors. Default is torch.float32.
 
     Attributes
     ----------
@@ -55,12 +60,22 @@ class HyperbolicManifold(ABC, nn.Module):
     stored value is positive, representing the absolute value of the curvature.
     """
 
-    def __init__(self, curvature: float = 1.0, trainable_curvature: bool = False) -> None:
+    def __init__(
+        self,
+        curvature: float = 1.0,
+        trainable_curvature: bool = False,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype = torch.float32,
+    ) -> None:
         super().__init__()
 
         if curvature <= 0:
             raise ManifoldError(f"Curvature must be positive, got {curvature}")
 
+        if device is None:
+            device = torch.device("cpu")
+
+        factory_kwargs = {"device": device, "dtype": dtype}
         self.trainable_curvature = trainable_curvature
 
         if trainable_curvature:
@@ -70,11 +85,11 @@ class HyperbolicManifold(ABC, nn.Module):
                     f"Curvature must be greater than {NumericalConstants.MIN_CURVATURE} to be trainable, got {curvature}"
                 )
 
-            raw_curvature = inverse_softplus(target)
-            self._curvature = nn.Parameter(torch.tensor(raw_curvature, dtype=torch.float32))
+            raw_curvature = inverse_softplus(target, dtype=dtype)
+            self._curvature = nn.Parameter(torch.tensor(raw_curvature, **factory_kwargs))
 
         else:
-            self.register_buffer("_curvature", torch.tensor(curvature, dtype=torch.float32))
+            self.register_buffer("_curvature", torch.tensor(curvature, **factory_kwargs))
 
     @property
     def curvature(self) -> torch.Tensor:
@@ -320,13 +335,13 @@ class MobiusManifold(HyperbolicManifold):
         return f"curvature={self.curvature.item():.6f}, trainable_curvature={self.trainable_curvature}"
 
 
-def inverse_softplus(y: Union[float, torch.Tensor]) -> torch.Tensor:
+def inverse_softplus(y: Union[float, torch.Tensor], dtype: torch.dtype = torch.float32) -> torch.Tensor:
     """
     Compute inverse of softplus: x such that softplus(x) = y.
 
     Uses the numerically stable form: log(exp(y) - 1) = log(expm1(y))
     """
-    y_tensor = torch.as_tensor(y, dtype=torch.float32)
+    y_tensor = torch.as_tensor(y, dtype=dtype)
     if (y_tensor <= 0).any():
         raise ValueError("Input to inverse_softplus must be positive")
     return torch.log(torch.expm1(y_tensor))

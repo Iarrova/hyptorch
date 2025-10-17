@@ -11,6 +11,7 @@ ToPoincare
 FromPoincare
     Maps points from the Poincaré ball to Euclidean space using the logarithmic map.
 """
+
 import torch
 
 from hyptorch.exceptions import NoHyperbolicManifoldProvidedError

@@ -15,6 +15,7 @@ Functions
 apply_riemannian_gradient
     Apply Riemannian gradient correction to tensors on the Poincaré ball.
 """
+
 import torch
 from torch.autograd.function import FunctionCtx
 

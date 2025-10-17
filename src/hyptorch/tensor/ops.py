@@ -16,6 +16,7 @@ dot_product
 tanh, atanh
     Numerically stable hyperbolic trigonometric functions.
 """
+
 import torch
 
 from hyptorch._config import NumericalConstants

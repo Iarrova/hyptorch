@@ -9,6 +9,7 @@ Functions
 compute_hyperbolic_mlr_logits
     Compute logits for hyperbolic multinomial logistic regression.
 """
+
 import torch
 
 from hyptorch._config import NumericalConstants

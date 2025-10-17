@@ -9,6 +9,7 @@ Classes
 HypLinear
     Hyperbolic linear layer with Möbius matrix-vector multiplication.
 """
+
 import torch
 import torch.nn as nn
 
@@ -99,7 +100,7 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features))
         else:
-            self.register_parameter('bias', None)
+            self.register_parameter("bias", None)
 
         self._init_parameters()
 

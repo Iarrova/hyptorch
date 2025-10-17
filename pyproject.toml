@@ -30,10 +30,17 @@ package-dir = { "" = "src" }
 where = ["src"]
 
 [tool.setuptools.dynamic]
-version = {attr = "hyptorch.__version__"}
+version = { attr = "hyptorch.__version__" }
 
 [tool.ruff]
 line-length = 110
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["hyptorch"]
 
 [dependency-groups]
 dev = ["pyright>=1.1.400", "pytest>=8.3.5"]

@@ -10,6 +10,7 @@ Classes
 HyperbolicMLR
     Hyperbolic MLR layer for classification tasks.
 """
+
 import torch
 import torch.nn as nn
 

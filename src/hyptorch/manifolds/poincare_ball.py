@@ -173,7 +173,7 @@ class PoincareBall(HyperbolicManifold):
 
         res_c = (1 / sqrt_c) * tanh((mx_norm / v_norm) * atanh(sqrt_c * v_norm)) * (mx / mx_norm)
 
-        cond = mx.norm(dim=-1, keepdim=True) < 1e-15
+        cond = torch.linalg.norm(mx, dim=-1, keepdim=True) < 1e-15
         res_0 = torch.zeros_like(res_c)
         res = torch.where(cond, res_0, res_c)
 

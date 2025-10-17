@@ -26,5 +26,5 @@ class NumericalConstants:
     MAX_NORM: ClassVar[Final[float]] = 1 - PROJECTION_EPS
 
     # Curvature bounds
-    MIN_CURVATURE: Final[float] = 1e-5
-    MAX_CURVATURE: Final[float] = 10.0
+    MIN_CURVATURE: ClassVar[Final[float]] = 1e-5
+    MAX_CURVATURE: ClassVar[Final[float]] = 10.0

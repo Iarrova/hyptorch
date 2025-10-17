@@ -14,7 +14,6 @@ MobiusManifold
 """
 
 from abc import ABC, abstractmethod
-from typing import Union
 
 import torch
 import torch.nn as nn
@@ -335,7 +334,7 @@ class MobiusManifold(HyperbolicManifold):
         return f"curvature={self.curvature.item():.6f}, trainable_curvature={self.trainable_curvature}"
 
 
-def inverse_softplus(y: Union[float, torch.Tensor], dtype: torch.dtype = torch.float32) -> torch.Tensor:
+def inverse_softplus(y: float | torch.Tensor, dtype: torch.dtype = torch.float32) -> torch.Tensor:
     """
     Compute inverse of softplus: x such that softplus(x) = y.
 

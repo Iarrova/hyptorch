@@ -63,7 +63,7 @@ class ToPoincare(HyperbolicLayer):
 
     def __init__(self, manifold: MobiusManifold) -> None:
         if manifold is None:
-            raise NoHyperbolicManifoldProvidedError
+            raise NoHyperbolicManifoldProvidedError("ToPoincare")
 
         super().__init__(manifold)
 
@@ -126,7 +126,7 @@ class FromPoincare(HyperbolicLayer):
 
     def __init__(self, manifold: MobiusManifold) -> None:
         if manifold is None:
-            raise NoHyperbolicManifoldProvidedError
+            raise NoHyperbolicManifoldProvidedError("FromPoincare")
 
         super().__init__(manifold)
 

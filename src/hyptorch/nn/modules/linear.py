@@ -82,7 +82,7 @@ class HypLinear(HyperbolicLayer, ParameterInitializationMixin):
         bias: bool = True,
     ) -> None:
         if manifold is None:
-            raise NoHyperbolicManifoldProvidedError
+            raise NoHyperbolicManifoldProvidedError("HypLinear")
 
         if in_features <= 0:
             raise ValueError(f"in_features must be positive, got {in_features}")

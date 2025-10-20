@@ -5,6 +5,7 @@ from hyptorch.nn import (
     HypLinear,
     ToPoincare,
 )
+from hyptorch.utils import seed_everything
 
 __version__ = "1.1.0"
 
@@ -14,4 +15,5 @@ __all__ = [
     "HyperbolicMLR",
     "HypLinear",
     "ToPoincare",
+    "seed_everything",
 ]

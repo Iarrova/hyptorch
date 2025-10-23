@@ -60,9 +60,7 @@ def _(pl, seed_everything):
     VALIDATION_SIZE: float = 0.2
 
     # Model parameters
-    CONV1_CHANNELS: int = 32
-    CONV2_CHANNELS: int = 64
-    HIDDEN_DIM: int = 128
+    HIDDEN_DIM = 256
     HYPERBOLIC_DIM: int = 2  # 2D for visualization
     NUM_CLASSES: int = 10
 
@@ -70,7 +68,7 @@ def _(pl, seed_everything):
     CURVATURE: float = 1.0
 
     # Training parameters
-    MAX_EPOCHS: int = 10
+    MAX_EPOCHS: int = 50
     LEARNING_RATE: float = 1e-3
     WEIGHT_DECAY: float = 1e-4
     PATIENCE: int = 5
@@ -104,7 +102,7 @@ def _(StrEnum, mo):
 
     backbone_selector = mo.ui.dropdown(
         options=[Backbones.VGG16, Backbones.RESNET50, Backbones.EFFICIENTNET_V2],
-        value=Backbones.EFFICIENTNET_V2,
+        value=Backbones.VGG16,
         label="Select Backbone:",
     )
     backbone_selector
@@ -143,9 +141,10 @@ def _(
             datasets.CIFAR10(DATA_DIR, train=False, download=True)
 
         def setup(self, stage: Optional[str] = None):
-            self.transform = transforms.Compose(
-                [transforms.ToTensor(), transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])]
-            )
+            self.transform = transforms.Compose([
+                transforms.ToTensor(), 
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ])
 
             if stage == "fit" or stage is None:
                 cifar10 = datasets.CIFAR10(DATA_DIR, train=True, transform=self.transform)
@@ -191,10 +190,12 @@ def _(
     nn,
     optim,
     pl,
+    torch,
 ):
     class BaseModel(pl.LightningModule):
         def __init__(self, backbone: str):
             super().__init__()
+            self.save_hyperparameters()
 
             self.backbone = backbone
             self._build_backbone()
@@ -203,26 +204,39 @@ def _(
             self.val_acc = Accuracy(task="multiclass", num_classes=NUM_CLASSES)
             self.test_acc = Accuracy(task="multiclass", num_classes=NUM_CLASSES)
 
+            # To show input/output sizes on the model summary
+            self.example_input_array = torch.randn(1, 3, 32, 32)
+
+
         def _build_backbone(self):
             if self.backbone == Backbones.VGG16:
-                backbone_model = models.vgg16(weights=None)
-                self.backbone_feature_dim = backbone_model.classifier[6].in_features
-                backbone_model.classifier = nn.Sequential(*list(backbone_model.classifier.children())[:-1])
+                backbone_model = models.vgg16_bn(weights="IMAGENET1K_V1")
+                self.backbone = nn.Sequential(
+                    backbone_model.features,
+                    nn.Flatten(start_dim=1)
+                )
+                self.backbone_feature_dim = 512 * 1 *1 # This applies to CIFAR10 only (32x32)
 
             elif self.backbone == Backbones.RESNET50:
                 backbone_model = models.resnet50(weights=None)
                 self.backbone_feature_dim = backbone_model.fc.in_features
                 backbone_model.fc = nn.Identity()
+                self.backbone = nn.Sequential(
+                    backbone_model, 
+                    nn.Flatten(start_dim=1)
+                )
 
             elif self.backbone == Backbones.EFFICIENTNET_V2:
                 backbone_model = models.efficientnet_v2_s(weights=None)
                 self.backbone_feature_dim = backbone_model.classifier[1].in_features
                 backbone_model.classifier = nn.Identity()
+                self.backbone = nn.Sequential(
+                    backbone_model, 
+                    nn.Flatten(start_dim=1)
+                )
 
             else:
                 raise ValueError(f"Unknown backbone: {self.backbone}")
-
-            self.backbone = nn.Sequential(backbone_model, nn.Flatten(start_dim=1))
 
             # Uncomment to freeze the feature extractor
             # for param in self.backbone.parameters():
@@ -306,7 +320,7 @@ def _(
 def _(
     BaseModel,
     F,
-    HIDDEN_DIM: int,
+    HIDDEN_DIM,
     HYPERBOLIC_DIM: int,
     NUM_CLASSES: int,
     nn,
@@ -318,18 +332,19 @@ def _(
             self._build_euclidean_layers()
 
         def _build_euclidean_layers(self):
-            self.fc1 = nn.Linear(self.backbone_feature_dim, HIDDEN_DIM)
-            self.fc2 = nn.Linear(HIDDEN_DIM, HYPERBOLIC_DIM)
-
+            self.feature_layer = nn.Sequential(
+                nn.Linear(self.backbone_feature_dim, HIDDEN_DIM),
+                nn.ReLU(),
+                nn.Dropout(0.5),
+                nn.Linear(HIDDEN_DIM, HYPERBOLIC_DIM),
+                nn.ReLU()
+            )
             self.classifier = nn.Linear(HYPERBOLIC_DIM, NUM_CLASSES)
-            self.dropout = nn.Dropout(0.2)
 
         def forward(self, x):
             x = self._forward_backbone(x)
-            x = F.relu(self.fc1(x))
-            features = self.fc2(x)
-            features_with_dropout = self.dropout(features)
-            logits = self.classifier(features_with_dropout)
+            features = self.feature_layer(x)
+            logits = self.classifier(features)
 
             return logits, features
 
@@ -349,8 +364,7 @@ def _(
 def _(
     BaseModel,
     CURVATURE: float,
-    F,
-    HIDDEN_DIM: int,
+    HIDDEN_DIM,
     HYPERBOLIC_DIM: int,
     HypLinear,
     HyperbolicMLR,
@@ -368,23 +382,23 @@ def _(
             self._build_hyperbolic_layers()
 
         def _build_hyperbolic_layers(self):
-            self.to_poincare = ToPoincare(self.manifold)
-
-            self.fc1 = HypLinear(self.backbone_feature_dim, HIDDEN_DIM, self.manifold)
-            self.fc2 = HypLinear(HIDDEN_DIM, HYPERBOLIC_DIM, self.manifold)
+            self.feature_layer = nn.Sequential(
+                ToPoincare(self.manifold),
+                HypLinear(self.backbone_feature_dim, HIDDEN_DIM, self.manifold),
+                nn.ReLU(),
+                nn.Dropout(0.5),
+                HypLinear(HIDDEN_DIM, HYPERBOLIC_DIM, self.manifold),
+                nn.ReLU()
+            )
 
             self.classifier = HyperbolicMLR(
                 ball_dim=HYPERBOLIC_DIM, n_classes=NUM_CLASSES, manifold=self.manifold
             )
-            self.dropout = nn.Dropout(0.2)
 
         def forward(self, x):
             x = self._forward_backbone(x)
-            x = self.to_poincare(x)
-            x = F.relu(self.fc1(x))
-            features = self.fc2(x)
-            features_with_dropout = self.dropout(features)
-            logits = self.classifier(features_with_dropout)
+            features = self.feature_layer(x)
+            logits = self.classifier(features)
 
             return logits, features
 
@@ -460,7 +474,6 @@ def _(
 
             results[model.__class__.__name__] = {
                 "test_acc": test_results[0]["test_acc"],
-                "best_val_acc": trainer.callback_metrics.get("val_acc", 0.0),
                 "model": model,
                 "trainer": trainer,
             }

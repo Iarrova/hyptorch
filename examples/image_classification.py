@@ -31,9 +31,7 @@ def _():
         F,
         LearningRateMonitor,
         ModelCheckpoint,
-        ModelSummary,
         Optional,
-        StrEnum,
         datasets,
         models,
         nn,
@@ -61,14 +59,14 @@ def _(pl, seed_everything):
 
     # Model parameters
     HIDDEN_DIM = 256
-    HYPERBOLIC_DIM: int = 2  # 2D for visualization
+    HYPERBOLIC_DIM: int = 64  # 2D for visualization
     NUM_CLASSES: int = 10
 
     # Hyperbolic parameters
-    CURVATURE: float = 1.0
+    CURVATURE: float = 0.005
 
     # Training parameters
-    MAX_EPOCHS: int = 50
+    MAX_EPOCHS: int = 10
     LEARNING_RATE: float = 1e-3
     WEIGHT_DECAY: float = 1e-4
     PATIENCE: int = 5
@@ -82,7 +80,6 @@ def _(pl, seed_everything):
         BATCH_SIZE,
         CURVATURE,
         DATA_DIR,
-        HIDDEN_DIM,
         HYPERBOLIC_DIM,
         LEARNING_RATE,
         MAX_EPOCHS,
@@ -91,22 +88,6 @@ def _(pl, seed_everything):
         VALIDATION_SIZE,
         WEIGHT_DECAY,
     )
-
-
-@app.cell
-def _(StrEnum, mo):
-    class Backbones(StrEnum):
-        VGG16 = "VGG16"
-        RESNET50 = "ResNet50"
-        EFFICIENTNET_V2 = "EfficientNetV2"
-
-    backbone_selector = mo.ui.dropdown(
-        options=[Backbones.VGG16, Backbones.RESNET50, Backbones.EFFICIENTNET_V2],
-        value=Backbones.VGG16,
-        label="Select Backbone:",
-    )
-    backbone_selector
-    return Backbones, backbone_selector
 
 
 @app.cell
@@ -181,7 +162,6 @@ def _(
 @app.cell
 def _(
     Accuracy,
-    Backbones,
     F,
     LEARNING_RATE: float,
     NUM_CLASSES: int,
@@ -193,11 +173,8 @@ def _(
     torch,
 ):
     class BaseModel(pl.LightningModule):
-        def __init__(self, backbone: str):
+        def __init__(self):
             super().__init__()
-            self.save_hyperparameters()
-
-            self.backbone = backbone
             self._build_backbone()
 
             self.train_acc = Accuracy(task="multiclass", num_classes=NUM_CLASSES)
@@ -209,34 +186,12 @@ def _(
 
 
         def _build_backbone(self):
-            if self.backbone == Backbones.VGG16:
-                backbone_model = models.vgg16_bn(weights="IMAGENET1K_V1")
-                self.backbone = nn.Sequential(
-                    backbone_model.features,
-                    nn.Flatten(start_dim=1)
-                )
-                self.backbone_feature_dim = 512 * 1 *1 # This applies to CIFAR10 only (32x32)
-
-            elif self.backbone == Backbones.RESNET50:
-                backbone_model = models.resnet50(weights=None)
-                self.backbone_feature_dim = backbone_model.fc.in_features
-                backbone_model.fc = nn.Identity()
-                self.backbone = nn.Sequential(
-                    backbone_model, 
-                    nn.Flatten(start_dim=1)
-                )
-
-            elif self.backbone == Backbones.EFFICIENTNET_V2:
-                backbone_model = models.efficientnet_v2_s(weights=None)
-                self.backbone_feature_dim = backbone_model.classifier[1].in_features
-                backbone_model.classifier = nn.Identity()
-                self.backbone = nn.Sequential(
-                    backbone_model, 
-                    nn.Flatten(start_dim=1)
-                )
-
-            else:
-                raise ValueError(f"Unknown backbone: {self.backbone}")
+            backbone_model = models.vgg16_bn(weights="IMAGENET1K_V1")
+            self.backbone = nn.Sequential(
+                backbone_model.features,
+                nn.Flatten(start_dim=1)
+            )
+            self.backbone_feature_dim = 512 * 1 *1 # This applies to CIFAR10 only (32x32)
 
             # Uncomment to freeze the feature extractor
             # for param in self.backbone.parameters():
@@ -317,28 +272,21 @@ def _(
 
 
 @app.cell
-def _(
-    BaseModel,
-    F,
-    HIDDEN_DIM,
-    HYPERBOLIC_DIM: int,
-    NUM_CLASSES: int,
-    nn,
-    torch,
-):
+def _(BaseModel, F, HYPERBOLIC_DIM: int, NUM_CLASSES: int, nn, torch):
     class EuclideanModel(BaseModel):
-        def __init__(self, backbone: str):
-            super().__init__(backbone=backbone)
+        def __init__(self):
+            super().__init__()
             self._build_euclidean_layers()
 
         def _build_euclidean_layers(self):
-            self.feature_layer = nn.Sequential(
-                nn.Linear(self.backbone_feature_dim, HIDDEN_DIM),
+            '''self.feature_layer = nn.Sequential(
+                nn.Linear(self.backbone_feature_dim, HYPERBOLIC_DIM),
                 nn.ReLU(),
                 nn.Dropout(0.5),
                 nn.Linear(HIDDEN_DIM, HYPERBOLIC_DIM),
                 nn.ReLU()
-            )
+            )'''
+            self.feature_layer = nn.Linear(self.backbone_feature_dim, HYPERBOLIC_DIM)
             self.classifier = nn.Linear(HYPERBOLIC_DIM, NUM_CLASSES)
 
         def forward(self, x):
@@ -364,7 +312,6 @@ def _(
 def _(
     BaseModel,
     CURVATURE: float,
-    HIDDEN_DIM,
     HYPERBOLIC_DIM: int,
     HypLinear,
     HyperbolicMLR,
@@ -375,20 +322,21 @@ def _(
     torch,
 ):
     class HyperbolicModel(BaseModel):
-        def __init__(self, backbone: str):
-            super().__init__(backbone=backbone)
+        def __init__(self):
+            super().__init__()
 
             self.manifold = PoincareBall(curvature=CURVATURE, trainable_curvature=True)
             self._build_hyperbolic_layers()
 
         def _build_hyperbolic_layers(self):
-            self.feature_layer = nn.Sequential(
+            '''self.feature_layer = nn.Sequential(
                 ToPoincare(self.manifold),
                 HypLinear(self.backbone_feature_dim, HIDDEN_DIM, self.manifold),
-                nn.ReLU(),
-                nn.Dropout(0.5),
                 HypLinear(HIDDEN_DIM, HYPERBOLIC_DIM, self.manifold),
-                nn.ReLU()
+            )'''
+            self.feature_layer = nn.Sequential(
+                ToPoincare(self.manifold),
+                HypLinear(self.backbone_feature_dim, HYPERBOLIC_DIM, self.manifold)
             )
 
             self.classifier = HyperbolicMLR(
@@ -418,12 +366,62 @@ def _(
 
 @app.cell
 def _(
-    EarlyStopping,
-    LearningRateMonitor,
-    ModelCheckpoint,
-    ModelSummary,
-    PATIENCE: int,
+    BaseModel,
+    CURVATURE: float,
+    F,
+    HYPERBOLIC_DIM: int,
+    HyperbolicMLR,
+    NUM_CLASSES: int,
+    PoincareBall,
+    ToPoincare,
+    nn,
+    torch,
 ):
+    class HybridModel(BaseModel):
+        def __init__(self):
+            super().__init__()
+
+            self.manifold = PoincareBall(curvature=CURVATURE, trainable_curvature=True)
+            self._build_hybrid_layers()
+
+        def _build_hybrid_layers(self):
+            '''self.feature_layer = nn.Sequential(
+                nn.Linear(self.backbone_feature_dim, HIDDEN_DIM),
+                nn.ReLU(),
+                nn.Dropout(0.5),
+                nn.Linear(HIDDEN_DIM, HYPERBOLIC_DIM),
+                ToPoincare(manifold=self.manifold)
+            )'''
+            self.feature_layer = nn.Sequential(
+                nn.Linear(self.backbone_feature_dim, HYPERBOLIC_DIM),
+                ToPoincare(self.manifold)
+            )
+
+            self.classifier = HyperbolicMLR(
+                ball_dim=HYPERBOLIC_DIM, n_classes=NUM_CLASSES, manifold=self.manifold
+            )
+
+        def forward(self, x):
+            x = self._forward_backbone(x)
+            features = self.feature_layer(x)
+            logits = self.classifier(features)
+
+            return logits, features
+
+        def _log_training_metrics(self, embeddings, logits, labels):
+            probs = F.softmax(logits, dim=1)
+            max_probs = torch.max(probs, dim=1)[0]
+            self.log("train_prediction_confidence_mean", max_probs.mean(), on_step=False, on_epoch=True)
+
+        def _log_validation_metrics(self, embeddings, logits, labels):
+            probs = F.softmax(logits, dim=1)
+            max_probs = torch.max(probs, dim=1)[0]
+            self.log("val_prediction_confidence_mean", max_probs.mean(), on_step=False, on_epoch=True)
+    return (HybridModel,)
+
+
+@app.cell
+def _(EarlyStopping, LearningRateMonitor, ModelCheckpoint, PATIENCE: int):
     def setup_callbacks():
         checkpoint_callback = ModelCheckpoint(
             dirpath="./examples/outputs/checkpoints",
@@ -432,7 +430,6 @@ def _(
             mode="min",
         )
 
-        # Early stopping - prevent overfitting
         early_stop_callback = EarlyStopping(
             monitor="val_loss",
             mode="min",
@@ -442,10 +439,9 @@ def _(
 
         lr_monitor = LearningRateMonitor(logging_interval="epoch")
 
-        # Model summary - show full model architecture
-        model_summary = ModelSummary(max_depth=-1)
+        #model_summary = ModelSummary(max_depth=-1)
 
-        callbacks = [checkpoint_callback, early_stop_callback, lr_monitor, model_summary]
+        callbacks = [checkpoint_callback, early_stop_callback, lr_monitor]
 
         return callbacks
     return (setup_callbacks,)
@@ -454,17 +450,17 @@ def _(
 @app.cell
 def _(
     EuclideanModel,
+    HybridModel,
     HyperbolicModel,
     MAX_EPOCHS: int,
-    backbone_selector,
     datamodule,
     pl,
     setup_callbacks,
 ):
-    def compare_models(datamodule, backbone: str):
+    def compare_models(datamodule):
         results = {}
 
-        models = [EuclideanModel(backbone=backbone), HyperbolicModel(backbone=backbone)]
+        models = [EuclideanModel(), HyperbolicModel(), HybridModel()]
         for model in models:
             callbacks = setup_callbacks()
 
@@ -480,7 +476,7 @@ def _(
 
         return results
 
-    results = compare_models(datamodule=datamodule, backbone=backbone_selector.value)
+    results = compare_models(datamodule=datamodule)
     results
     return (results,)
 

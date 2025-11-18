@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.15.2"
+__generated_with = "0.17.7"
 app = marimo.App(width="medium")
 
 
@@ -12,439 +12,184 @@ def _():
 
 @app.cell
 def _():
-    from enum import StrEnum
-    from typing import Optional
-
     import matplotlib.pyplot as plt
-    import numpy as np
     import pytorch_lightning as pl
-    import torch
-    import torch.nn as nn
-    import torch.nn.functional as F
-    import torch.optim as optim
-    from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor, ModelCheckpoint, ModelSummary
-    from torchmetrics import Accuracy
-    from torchvision import datasets, models, transforms
+
+    from src.config import Config, DatasetConfig, HyperbolicConfig, ModelConfig, TrainingConfig
+    from src.datasets import create_dataset, denormalize
+    from src.enums import Dataset, Backbone
+    from src.models import EuclideanModel, HybridModel, HyperbolicModel
+    from src.test import test_model
+    from src.train import train_model
+    from src.visualization.training import plot_training_metrics
+
+    from hyptorch import seed_everything
     return (
-        Accuracy,
-        EarlyStopping,
-        F,
-        LearningRateMonitor,
-        ModelCheckpoint,
-        Optional,
-        datasets,
-        models,
-        nn,
-        optim,
+        Backbone,
+        Config,
+        Dataset,
+        DatasetConfig,
+        EuclideanModel,
+        HybridModel,
+        HyperbolicConfig,
+        HyperbolicModel,
+        ModelConfig,
+        TrainingConfig,
+        create_dataset,
+        denormalize,
         pl,
-        torch,
-        transforms,
+        plot_training_metrics,
+        plt,
+        seed_everything,
+        test_model,
+        train_model,
     )
-
-
-@app.cell
-def _():
-    from hyptorch import HyperbolicMLR, HypLinear, PoincareBall, ToPoincare, seed_everything
-    return HypLinear, HyperbolicMLR, PoincareBall, ToPoincare, seed_everything
 
 
 @app.cell
 def _(pl, seed_everything):
-    # All configuration variables for the notebook. Feel free to modify them as you experiment
-
-    # Data parameters
-    DATA_DIR: str = "./examples/outputs/data"
-    BATCH_SIZE: int = 128
-    VALIDATION_SIZE: float = 0.2
-
-    # Model parameters
-    HIDDEN_DIM = 256
-    HYPERBOLIC_DIM: int = 64  # 2D for visualization
-    NUM_CLASSES: int = 10
-
-    # Hyperbolic parameters
-    CURVATURE: float = 0.005
-
-    # Training parameters
-    MAX_EPOCHS: int = 10
-    LEARNING_RATE: float = 1e-3
-    WEIGHT_DECAY: float = 1e-4
-    PATIENCE: int = 5
-
-    # System
-    SEED: int = 42
+    SEED = 42
 
     pl.seed_everything(SEED)
     seed_everything(SEED)
-    return (
-        BATCH_SIZE,
-        CURVATURE,
-        DATA_DIR,
-        HYPERBOLIC_DIM,
-        LEARNING_RATE,
-        MAX_EPOCHS,
-        NUM_CLASSES,
-        PATIENCE,
-        VALIDATION_SIZE,
-        WEIGHT_DECAY,
-    )
-
-
-@app.cell
-def _(mo):
-    mo.md(
-        r"""
-    # Hyperbolic Image Classification with CIFAR10
-
-    This notebook demonstrates how the `hyptorch` library integrates with PyTorch, by showing a simple example on building a hyperbolic neural networks for image classification using the CIFAR10 dataset.
-    """
-    )
     return
 
 
 @app.cell
+def _(mo):
+    mo.md(r"""
+    # Hyperbolic Image Classification with CIFAR
+
+    This notebook demonstrates how the `hyptorch` library integrates with PyTorch, by showing a simple example on building a hyperbolic neural networks for image classification using the CIFAR dataset.
+    """)
+    return
+
+
+@app.cell
+def _(Dataset, mo):
+    dataset_selector = mo.ui.dropdown(options=[Dataset.CIFAR10, Dataset.CIFAR100], value=Dataset.CIFAR10, label="Dataset:")
+
+    mo.md(f"""
+    ## Dataset Settings
+    {dataset_selector}
+    """)
+    return (dataset_selector,)
+
+
+@app.cell
+def _(Backbone, mo):
+    backbone_selector = mo.ui.dropdown(
+        options=[Backbone.VGG16, Backbone.ResNet50, Backbone.EfficientNetV2], 
+        value=Backbone.EfficientNetV2, 
+        label="Backbone:"
+    )
+    pretrained_checkbox = mo.ui.checkbox(value=True, label="Use Pretrained Weights")
+
+    mo.md(f"""
+    ## Model Architecture
+    {backbone_selector} {pretrained_checkbox}
+    """)
+    return backbone_selector, pretrained_checkbox
+
+
+@app.cell
 def _(
-    BATCH_SIZE: int,
-    DATA_DIR: str,
-    Optional,
-    VALIDATION_SIZE: float,
-    datasets,
-    pl,
-    torch,
-    transforms,
+    Config,
+    DatasetConfig,
+    HyperbolicConfig,
+    ModelConfig,
+    TrainingConfig,
+    pretrained_checkbox,
 ):
-    class CIFAR10DataModule(pl.LightningDataModule):
-        def __init__(self):
-            super().__init__()
+    # Here you can change more advanced configuration if desired
+    config = Config(
+        dataset=DatasetConfig(
+            DATA_DIR="./examples/outputs/data", 
+            BATCH_SIZE=128, 
+            VALIDATION_SIZE=0.2
+        ),
+        model=ModelConfig(
+            EMBEDDING_DIMENSION=8, 
+            PRETRAINED=pretrained_checkbox.value
+        ),
+        hyperbolic=HyperbolicConfig(
+            CURVATURE=0.05,
+            TRAINABLE_CURVATURE=True,
+            CURVATURE_LEARNING_RATE=0.1,
+        ),
+        training=TrainingConfig(
+            MAX_EPOCHS=1,
+            LEARNING_RATE=1e-3,
+            WEIGHT_DECAY=1e-4,
+            EARLY_STOPPING_PATIENCE=10,
+        ),
+    )
+    return (config,)
 
-        def prepare_data(self):
-            datasets.CIFAR10(DATA_DIR, train=True, download=True)
-            datasets.CIFAR10(DATA_DIR, train=False, download=True)
 
-        def setup(self, stage: Optional[str] = None):
-            self.transform = transforms.Compose([
-                transforms.ToTensor(), 
-                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-            ])
+@app.cell
+def _(mo):
+    mo.md(r"""
+    # Dataset Preview
 
-            if stage == "fit" or stage is None:
-                cifar10 = datasets.CIFAR10(DATA_DIR, train=True, transform=self.transform)
+    Before training the models let's visualize some sample images from the selected dataset to understand what we're working with.
+    """)
+    return
 
-                self.cifar10_train, self.cifar10_val = torch.utils.data.random_split(
-                    cifar10, lengths=[1 - VALIDATION_SIZE, VALIDATION_SIZE]
-                )
 
-            if stage == "test" or stage is None:
-                self.cifar10_test = datasets.CIFAR10(DATA_DIR, train=False, transform=self.transform)
-
-        def train_dataloader(self):
-            return torch.utils.data.DataLoader(
-                self.cifar10_train, batch_size=BATCH_SIZE, shuffle=True, num_workers=5, pin_memory=True
-            )
-
-        def val_dataloader(self):
-            return torch.utils.data.DataLoader(
-                self.cifar10_val, batch_size=BATCH_SIZE, shuffle=False, num_workers=5, pin_memory=True
-            )
-
-        def test_dataloader(self):
-            return torch.utils.data.DataLoader(
-                self.cifar10_test, batch_size=BATCH_SIZE, shuffle=False, num_workers=5, pin_memory=True
-            )
-
-    # Initialize data module
-    datamodule = CIFAR10DataModule()
+@app.cell
+def _(config, create_dataset, dataset_selector):
+    datamodule = create_dataset(dataset_selector.value, config)
     datamodule.prepare_data()
     datamodule.setup()
     return (datamodule,)
 
 
 @app.cell
-def _(
-    Accuracy,
-    F,
-    LEARNING_RATE: float,
-    NUM_CLASSES: int,
-    WEIGHT_DECAY: float,
-    models,
-    nn,
-    optim,
-    pl,
-    torch,
-):
-    class BaseModel(pl.LightningModule):
-        def __init__(self):
-            super().__init__()
-            self._build_backbone()
+def _(datamodule, dataset_selector, denormalize, plt):
+    def preview_dataset(datamodule):
+        class_names = datamodule.get_class_names()
+        train_loader = datamodule.train_dataloader()
 
-            self.train_acc = Accuracy(task="multiclass", num_classes=NUM_CLASSES)
-            self.val_acc = Accuracy(task="multiclass", num_classes=NUM_CLASSES)
-            self.test_acc = Accuracy(task="multiclass", num_classes=NUM_CLASSES)
+        images, labels = next(iter(train_loader))
 
-            # To show input/output sizes on the model summary
-            self.example_input_array = torch.randn(1, 3, 32, 32)
+        fig, axes = plt.subplots(2, 5, figsize=(12, 5))
+        fig.suptitle(f"{dataset_selector.value} Sample Images")
 
+        for idx, ax in enumerate(axes.flat):
+            if idx < len(images):
+                img = denormalize(images[idx])
+                ax.imshow(img)
+                ax.set_title(f"{class_names[labels[idx]]}")
+                ax.axis("off")
 
-        def _build_backbone(self):
-            backbone_model = models.vgg16_bn(weights="IMAGENET1K_V1")
-            self.backbone = nn.Sequential(
-                backbone_model.features,
-                nn.Flatten(start_dim=1)
-            )
-            self.backbone_feature_dim = 512 * 1 *1 # This applies to CIFAR10 only (32x32)
+        plt.tight_layout()
+        return fig
 
-            # Uncomment to freeze the feature extractor
-            # for param in self.backbone.parameters():
-            #     param.requires_grad = False
-
-        def _forward_backbone(self, x):
-            x = self.backbone(x)
-            return x
-
-        def forward(self, x):
-            raise NotImplementedError("Subclasses must implement forward()")
-
-        def training_step(self, batch, batch_idx):
-            x, y = batch
-            logits, embeddings = self(x)
-
-            loss = F.cross_entropy(logits, y)
-            acc = self.train_acc(logits, y)
-
-            self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
-            self.log("train_acc", acc, on_step=False, on_epoch=True, prog_bar=True)
-
-            # Let subclasses add their specific metrics
-            self._log_training_metrics(embeddings, logits, y)
-
-            return loss
-
-        def validation_step(self, batch, batch_idx):
-            x, y = batch
-            logits, embeddings = self(x)
-
-            loss = F.cross_entropy(logits, y)
-            acc = self.val_acc(logits, y)
-
-            self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
-            self.log("val_acc", acc, on_step=False, on_epoch=True, prog_bar=True)
-
-            # Let subclasses add their specific metrics
-            self._log_validation_metrics(embeddings, logits, y)
-
-            return loss
-
-        def test_step(self, batch, batch_idx):
-            x, y = batch
-            logits, embeddings = self(x)
-
-            loss = F.cross_entropy(logits, y)
-            acc = self.test_acc(logits, y)
-
-            self.log("test_loss", loss, on_step=False, on_epoch=True)
-            self.log("test_acc", acc, on_step=False, on_epoch=True)
-
-            return loss
-
-        def configure_optimizers(self):
-            optimizer = optim.Adam(self.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
-
-            scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-                optimizer,
-                mode="max",
-                factor=0.5,
-                patience=3,
-            )
-
-            return {
-                "optimizer": optimizer,
-                "lr_scheduler": {"scheduler": scheduler, "monitor": "val_acc", "frequency": 1},
-            }
-
-        def _log_training_metrics(self, embeddings, logits, labels):
-            """Hook for subclass-specific training metrics."""
-            pass
-
-        def _log_validation_metrics(self, embeddings, logits, labels):
-            """Hook for subclass-specific validation metrics."""
-            pass
-    return (BaseModel,)
+    preview_dataset(datamodule)
+    return
 
 
 @app.cell
-def _(BaseModel, F, HYPERBOLIC_DIM: int, NUM_CLASSES: int, nn, torch):
-    class EuclideanModel(BaseModel):
-        def __init__(self):
-            super().__init__()
-            self._build_euclidean_layers()
+def _(mo):
+    mo.md(r"""
+    # Model Training
 
-        def _build_euclidean_layers(self):
-            '''self.feature_layer = nn.Sequential(
-                nn.Linear(self.backbone_feature_dim, HYPERBOLIC_DIM),
-                nn.ReLU(),
-                nn.Dropout(0.5),
-                nn.Linear(HIDDEN_DIM, HYPERBOLIC_DIM),
-                nn.ReLU()
-            )'''
-            self.feature_layer = nn.Linear(self.backbone_feature_dim, HYPERBOLIC_DIM)
-            self.classifier = nn.Linear(HYPERBOLIC_DIM, NUM_CLASSES)
+    Now let's train and compare three different model architectures:
+    - **Euclidean Model**: Traditional neural network with Euclidean geometry.
+    - **Hyperbolic Model**: Neural network using hyperbolic geometry for embeddings.
+    - **Hybrid Model**: Combines both Euclidean and hyperbolic components.
 
-        def forward(self, x):
-            x = self._forward_backbone(x)
-            features = self.feature_layer(x)
-            logits = self.classifier(features)
-
-            return logits, features
-
-        def _log_training_metrics(self, embeddings, logits, labels):
-            probs = F.softmax(logits, dim=1)
-            max_probs = torch.max(probs, dim=1)[0]
-            self.log("train_prediction_confidence_mean", max_probs.mean(), on_step=False, on_epoch=True)
-
-        def _log_validation_metrics(self, embeddings, logits, labels):
-            probs = F.softmax(logits, dim=1)
-            max_probs = torch.max(probs, dim=1)[0]
-            self.log("val_prediction_confidence_mean", max_probs.mean(), on_step=False, on_epoch=True)
-    return (EuclideanModel,)
+    Click the button below to start training:
+    """)
+    return
 
 
 @app.cell
-def _(
-    BaseModel,
-    CURVATURE: float,
-    HYPERBOLIC_DIM: int,
-    HypLinear,
-    HyperbolicMLR,
-    NUM_CLASSES: int,
-    PoincareBall,
-    ToPoincare,
-    nn,
-    torch,
-):
-    class HyperbolicModel(BaseModel):
-        def __init__(self):
-            super().__init__()
-
-            self.manifold = PoincareBall(curvature=CURVATURE, trainable_curvature=True)
-            self._build_hyperbolic_layers()
-
-        def _build_hyperbolic_layers(self):
-            '''self.feature_layer = nn.Sequential(
-                ToPoincare(self.manifold),
-                HypLinear(self.backbone_feature_dim, HIDDEN_DIM, self.manifold),
-                HypLinear(HIDDEN_DIM, HYPERBOLIC_DIM, self.manifold),
-            )'''
-            self.feature_layer = nn.Sequential(
-                ToPoincare(self.manifold),
-                HypLinear(self.backbone_feature_dim, HYPERBOLIC_DIM, self.manifold)
-            )
-
-            self.classifier = HyperbolicMLR(
-                ball_dim=HYPERBOLIC_DIM, n_classes=NUM_CLASSES, manifold=self.manifold
-            )
-
-        def forward(self, x):
-            x = self._forward_backbone(x)
-            features = self.feature_layer(x)
-            logits = self.classifier(features)
-
-            return logits, features
-
-        def _log_training_metrics(self, embeddings, logits, labels):
-            distances_to_boundary = 1.0 - torch.norm(embeddings, dim=1)
-            self.log(
-                "train_distance_to_boundary_mean", distances_to_boundary.mean(), on_step=False, on_epoch=True
-            )
-
-        def _log_validation_metrics(self, embeddings, logits, labels):
-            distances_to_boundary = 1.0 - torch.norm(embeddings, dim=1)
-            self.log(
-                "val_distance_to_boundary_mean", distances_to_boundary.mean(), on_step=False, on_epoch=True
-            )
-    return (HyperbolicModel,)
-
-
-@app.cell
-def _(
-    BaseModel,
-    CURVATURE: float,
-    F,
-    HYPERBOLIC_DIM: int,
-    HyperbolicMLR,
-    NUM_CLASSES: int,
-    PoincareBall,
-    ToPoincare,
-    nn,
-    torch,
-):
-    class HybridModel(BaseModel):
-        def __init__(self):
-            super().__init__()
-
-            self.manifold = PoincareBall(curvature=CURVATURE, trainable_curvature=True)
-            self._build_hybrid_layers()
-
-        def _build_hybrid_layers(self):
-            '''self.feature_layer = nn.Sequential(
-                nn.Linear(self.backbone_feature_dim, HIDDEN_DIM),
-                nn.ReLU(),
-                nn.Dropout(0.5),
-                nn.Linear(HIDDEN_DIM, HYPERBOLIC_DIM),
-                ToPoincare(manifold=self.manifold)
-            )'''
-            self.feature_layer = nn.Sequential(
-                nn.Linear(self.backbone_feature_dim, HYPERBOLIC_DIM),
-                ToPoincare(self.manifold)
-            )
-
-            self.classifier = HyperbolicMLR(
-                ball_dim=HYPERBOLIC_DIM, n_classes=NUM_CLASSES, manifold=self.manifold
-            )
-
-        def forward(self, x):
-            x = self._forward_backbone(x)
-            features = self.feature_layer(x)
-            logits = self.classifier(features)
-
-            return logits, features
-
-        def _log_training_metrics(self, embeddings, logits, labels):
-            probs = F.softmax(logits, dim=1)
-            max_probs = torch.max(probs, dim=1)[0]
-            self.log("train_prediction_confidence_mean", max_probs.mean(), on_step=False, on_epoch=True)
-
-        def _log_validation_metrics(self, embeddings, logits, labels):
-            probs = F.softmax(logits, dim=1)
-            max_probs = torch.max(probs, dim=1)[0]
-            self.log("val_prediction_confidence_mean", max_probs.mean(), on_step=False, on_epoch=True)
-    return (HybridModel,)
-
-
-@app.cell
-def _(EarlyStopping, LearningRateMonitor, ModelCheckpoint, PATIENCE: int):
-    def setup_callbacks():
-        checkpoint_callback = ModelCheckpoint(
-            dirpath="./examples/outputs/checkpoints",
-            filename="hyperbolic-mnist-{epoch:02d}-{val_acc:.4f}",
-            monitor="val_loss",
-            mode="min",
-        )
-
-        early_stop_callback = EarlyStopping(
-            monitor="val_loss",
-            mode="min",
-            patience=PATIENCE,
-            verbose=True,
-        )
-
-        lr_monitor = LearningRateMonitor(logging_interval="epoch")
-
-        #model_summary = ModelSummary(max_depth=-1)
-
-        callbacks = [checkpoint_callback, early_stop_callback, lr_monitor]
-
-        return callbacks
-    return (setup_callbacks,)
+def _(mo):
+    train_button = mo.ui.run_button(label="Train Models")
+    train_button
+    return (train_button,)
 
 
 @app.cell
@@ -452,38 +197,84 @@ def _(
     EuclideanModel,
     HybridModel,
     HyperbolicModel,
-    MAX_EPOCHS: int,
+    backbone_selector,
+    config,
     datamodule,
-    pl,
-    setup_callbacks,
+    mo,
+    train_button,
+    train_model,
 ):
-    def compare_models(datamodule):
+    def train_models(config, datamodule):
         results = {}
 
-        models = [EuclideanModel(), HyperbolicModel(), HybridModel()]
-        for model in models:
-            callbacks = setup_callbacks()
+        models = [
+            EuclideanModel(config, backbone_selector.value, datamodule.num_classes),
+            HyperbolicModel(config, backbone_selector.value, datamodule.num_classes),
+            HybridModel(config, backbone_selector.value, datamodule.num_classes),
+        ]
 
-            trainer = pl.Trainer(max_epochs=MAX_EPOCHS, callbacks=callbacks, enable_progress_bar=False)
-            trainer.fit(model, datamodule)
-            test_results = trainer.test(ckpt_path="best", datamodule=datamodule)
+        with mo.status.progress_bar(total=3) as bar:
+            for model in models:
+                bar.update(increment=1, title=f"Training {model.name}", subtitle=f"Dataset: {datamodule.dataset_name}")
 
-            results[model.__class__.__name__] = {
-                "test_acc": test_results[0]["test_acc"],
-                "model": model,
-                "trainer": trainer,
-            }
+                train_result = train_model(config, datamodule, model)
+                results[model.name] = train_result
 
         return results
 
-    results = compare_models(datamodule=datamodule)
-    results
+    results = train_models(config, datamodule) if train_button.value else None
     return (results,)
 
 
 @app.cell
-def _(results):
-    results["HyperbolicModel"]["model"].manifold.curvature
+def _(mo, plot_training_metrics, results):
+    mo.vstack([
+        mo.md("## Training Results"),
+        plot_training_metrics(results) if results else mo.md("Press the `Train Models` button to visualize results"),
+    ])
+    return
+
+
+@app.cell
+def _(mo, results):
+    mo.vstack([
+        mo.md("# Model Testing"),
+        mo.md("Finally, once we have our models trained, we compare their results over the testing set.") if results else mo.md("Train the models before visualizing testing results"),
+    ])
+    return
+
+
+@app.cell
+def _(datamodule, results, test_model):
+    def test_models(datamodule, results):
+        test_results = {} 
+
+        for model in results:
+            test_result = test_model(datamodule, results[model])
+            test_results[model] = test_result
+
+        return test_results
+
+
+    test_results = test_models(datamodule, results) if results is not None else None
+    return (test_results,)
+
+
+@app.cell
+def _(mo, test_results):
+    def generate_comparison_table(test_results):
+        table_data = []
+        for model in test_results:
+            result = test_results[model]
+            table_data.append({
+                "Model": model,
+                "Test Accuracy": f"{result.test_acc * 100:.2f}%",
+                "Test Loss": f"{result.test_loss:.4f}",
+            })
+
+        return mo.ui.table(table_data)
+
+    generate_comparison_table(test_results) if test_results else None
     return
 
 

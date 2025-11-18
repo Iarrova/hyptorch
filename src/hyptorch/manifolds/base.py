@@ -84,8 +84,9 @@ class HyperbolicManifold(ABC, nn.Module):
                     f"Curvature must be greater than {NumericalConstants.MIN_CURVATURE} to be trainable, got {curvature}"
                 )
 
-            raw_curvature = inverse_softplus(target, dtype=dtype)
-            self._curvature = nn.Parameter(torch.tensor(raw_curvature, **factory_kwargs))
+            self._curvature = nn.Parameter(
+                inverse_softplus(target, dtype=dtype).detach().clone().to(**factory_kwargs), requires_grad=True
+            )
 
         else:
             self.register_buffer("_curvature", torch.tensor(curvature, **factory_kwargs))
@@ -102,9 +103,7 @@ class HyperbolicManifold(ABC, nn.Module):
         """
         if self.trainable_curvature:
             curvature = torch.nn.functional.softplus(self._curvature) + NumericalConstants.MIN_CURVATURE
-            return torch.clamp(
-                curvature, min=NumericalConstants.MIN_CURVATURE, max=NumericalConstants.MAX_CURVATURE
-            )
+            return torch.clamp(curvature, min=NumericalConstants.MIN_CURVATURE, max=NumericalConstants.MAX_CURVATURE)
 
         return self._curvature
 

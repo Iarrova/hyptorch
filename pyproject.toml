@@ -33,7 +33,7 @@ where = ["src"]
 version = { attr = "hyptorch.__version__" }
 
 [tool.ruff]
-line-length = 110
+line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "SIM"]
@@ -59,4 +59,5 @@ examples = [
     "marimo>=0.15.2",
     "matplotlib>=3.10.6",
     "rich>=14.1.0",
+    "tensorboard>=2.20.0",
 ]

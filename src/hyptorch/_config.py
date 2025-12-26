@@ -22,7 +22,7 @@ class NumericalConstants:
     ATANH_CLAMP_MAX: ClassVar[Final[float]] = 1 - EPS
 
     # Projection to Poincaré ball
-    PROJECTION_EPS: ClassVar[Final[float]] = EPS
+    PROJECTION_EPS: ClassVar[Final[float]] = 1e-3
     MAX_NORM: ClassVar[Final[float]] = 1 - PROJECTION_EPS
 
     # Curvature bounds
